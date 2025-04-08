@@ -1,6 +1,7 @@
 # Source
 src/
 test/
+docs/
 baserow-openapi/
 
 # Config files

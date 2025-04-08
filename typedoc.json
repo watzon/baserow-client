@@ -1,0 +1,15 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "out": "./docs",
+    "entryPoints": [
+        "./src/client/index.ts",
+        "./src/types/index.ts"
+    ],
+    "plugin": [
+        "typedoc-github-theme",
+        "@8hobbies/typedoc-plugin-plausible"
+    ],
+    "plausibleSiteDomain": "analytics.spectrumitconsulting.com",
+    "cacheBust": true,
+    "groupReferencesByType": true
+}
