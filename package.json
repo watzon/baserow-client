@@ -1,6 +1,6 @@
 {
   "name": "@watzon/baserow",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Baserow client library",
   "module": "dist/baserow.es.js",
   "main": "dist/baserow.umd.js",
