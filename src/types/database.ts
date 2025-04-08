@@ -580,3 +580,65 @@ export interface PublicViewFilter {
   type: string; // Consider enum if all filter types are consistently available
   value: string;
 }
+
+// --- Database Fields Types ---
+export interface BaseField {
+  id: number;
+  table_id: number;
+  name: string;
+  order: number;
+  type: string;
+  primary: boolean;
+  read_only: boolean;
+  immutable_type: boolean | null;
+  immutable_properties: boolean | null;
+  description: string | null;
+}
+
+// Union type for all field types
+export type Field = BaseField & {
+  // Field-specific properties would be added here in a real implementation
+  // For simplicity, we're using a generic type that can hold any properties
+  [key: string]: any;
+};
+
+export interface FieldCreateRequest {
+  name: string;
+  type: string;
+  // Type-specific properties would be defined here
+  [key: string]: any;
+}
+
+export interface FieldUpdateRequest {
+  name?: string;
+  // Other updatable properties would be defined here
+  [key: string]: any;
+}
+
+export interface RelatedFields {
+  related_fields: Field[];
+}
+
+export interface UniqueRowValues {
+  values: string[];
+}
+
+export interface UniqueRowValuesParams {
+  limit?: number;
+  split_comma_separated?: boolean;
+}
+
+export interface DuplicateFieldJobResponse extends BaserowJob {
+  original_field: Field;
+  duplicated_field: Field & RelatedFields;
+}
+
+export interface DuplicateFieldParams {
+  duplicate_data?: boolean;
+  clientSessionId?: string;
+  clientUndoRedoActionGroupId?: string;
+}
+
+export interface GenerateAIFieldValuesRequest {
+  row_ids: number[];
+}

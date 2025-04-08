@@ -111,7 +111,7 @@ client.databaseRows.getAll(tableId);
 #### Database Operations
 - [x] Database Row Operations - CRUD operations for table rows
 - [x] Database Table Operations - Table creation and management
-- [ ] Database Field Operations - Field definition and customization
+- [x] Database Field Operations - Field definition and customization
 - [ ] Database View Operations - View creation and configuration
 - [ ] Database Webhook Operations - Webhook management
 - [ ] Database Token Operations - API token management
