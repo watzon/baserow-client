@@ -1,0 +1,862 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/user-source/{user_source_id}/:
+    patch:
+      operationId: update_application_user_source
+      description: Updates an existing user_source.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: path
+        name: user_source_id
+        schema:
+          type: integer
+        description: The id of the user_source
+        required: true
+      tags:
+      - User sources
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser_SourceUpdateUserSource'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser_SourceUpdateUserSource'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser_SourceUpdateUserSource'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User_SourceUserSource'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_SOURCE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    delete:
+      operationId: delete_application_user_source
+      description: Deletes the user_source related by the given id.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: path
+        name: user_source_id
+        schema:
+          type: integer
+        description: The id of the user_source
+        required: true
+      tags:
+      - User sources
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_SOURCE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user-source/{user_source_id}/force-token-auth:
+    post:
+      operationId: user_source_force_token_auth
+      description: Force authenticates an existing user based on their ID. If successful, an access token
+        and a refresh token will be returned.
+      parameters:
+      - in: path
+        name: user_source_id
+        schema:
+          type: integer
+        description: The user source to use to authenticate the user.
+        required: true
+      tags:
+      - User sources
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: '''access_token'' can be used to authorize for other endpoints that require
+                      authorization. This token will be valid for 10 minutes.'
+                  refresh_token:
+                    type: string
+                    description: '''refresh_token'' can be used to get a new valid ''access_token''. This
+                      token will be valid for 168 hours.'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                description: An active user with the provided ID could not be found.
+          description: ''
+  /api/user-source/{user_source_id}/move/:
+    patch:
+      operationId: move_application_user_source
+      description: Moves the user_source in the application before another user_source or at the end of
+        the application if no before user_source is given. The user_sources must belong to the same application.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: path
+        name: user_source_id
+        schema:
+          type: integer
+        description: The id of the user_source to move
+        required: true
+      tags:
+      - User sources
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMoveUserSource'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMoveUserSource'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMoveUserSource'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User_SourceUserSource'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                    - ERROR_USER_SOURCE_NOT_IN_SAME_APPLICATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_SOURCE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user-source/{user_source_id}/token-auth:
+    post:
+      operationId: user_source_token_auth
+      description: Authenticates an existing user against a user source based on their credentials. If
+        successful, an access token and a refresh token will be returned.
+      parameters:
+      - in: path
+        name: user_source_id
+        schema:
+          type: integer
+        description: The id of the user_source to move
+        required: true
+      tags:
+      - User sources
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      security:
+      - JWT: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: '''access_token'' can be used to authorize for other endpoints that require
+                      authorization. This token will be valid for 10 minutes.'
+                  refresh_token:
+                    type: string
+                    description: '''refresh_token'' can be used to get a new valid ''access_token''. This
+                      token will be valid for 168 hours.'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                description: An active user with the provided email and password could not be found.
+          description: ''
+  /api/user-source/{user_source_uid}/sso/oauth2/openid_connect/callback/:
+    get:
+      operationId: app_auth_oidc_login_callback
+      description: Processes callback from OAuth2 provider and logs the user in if successful.
+      parameters:
+      - in: query
+        name: code
+        schema:
+          type: string
+        description: The code returned by the IDP.
+      - in: query
+        name: state
+        schema:
+          type: string
+        description: The oauth state returned by the IDP.
+      - in: path
+        name: user_source_uid
+        schema:
+          type: integer
+        description: The uid of the user source for which to process the callback.
+        required: true
+      tags:
+      - User sources
+      responses:
+        '302':
+          description: No response body
+  /api/user-source/{user_source_uid}/sso/oauth2/openid_connect/login/:
+    get:
+      operationId: app_auth_oidc_login_redirect
+      description: Redirects to the OAuth2 provider's authentication URL based on the provided user source
+        uid and issuer.
+      parameters:
+      - in: query
+        name: iss
+        schema:
+          type: string
+        description: The issuer of the authentication.
+      - in: query
+        name: original
+        schema:
+          type: string
+        description: The URL that the user wants to access.
+      - in: path
+        name: user_source_uid
+        schema:
+          type: integer
+        description: The uid of the user source to use for authentication.
+        required: true
+      tags:
+      - User sources
+      responses:
+        '302':
+          description: No response body
+  /api/user-source/{user_source_uid}/sso/saml/login/:
+    get:
+      operationId: app_auth_provider_saml_sp_login
+      description: This is the endpoint that is called when the user wants to initiate a SSO SAML login
+        from Baserow (the service provider). The user will be redirected to the SAML identity provider
+        (IdP) where the user can authenticate. Once logged in in the IdP, the user will be redirected
+        back to the assertion consumer service endpoint (ACS) where the SAML response will be validated
+        and a new JWT session token will be provided to work with Baserow APIs.
+      parameters:
+      - in: query
+        name: email
+        schema:
+          type: string
+        description: The email address of the user that want to sign in using SAML.
+      - in: query
+        name: original
+        schema:
+          type: string
+        description: The url to which the user should be redirected after a successful login or sign up.
+      - in: path
+        name: user_source_uid
+        schema:
+          type: string
+        required: true
+      tags:
+      - User sources
+      responses:
+        '302':
+          description: No response body
+  /api/user-source/sso/saml/acs/:
+    post:
+      operationId: auth_provider_saml_acs_url_2
+      description: Complete the SAML authentication flow by validating the SAML response. Sign in the
+        user if already exists in the user source or create a new one otherwise.Once authenticated, the
+        user will be redirected to the original URL they were trying to access. If the response is invalid,
+        the user will be redirected to an error page with a specific error message.
+      tags:
+      - User sources
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommonSAMLResponse'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CommonSAMLResponse'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommonSAMLResponse'
+        required: true
+      responses:
+        '302':
+          description: No response body
+components:
+  schemas:
+    TokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - refresh
+      - username
+    CommonSAMLResponse:
+      type: object
+      properties:
+        SAMLResponse:
+          type: string
+          description: The encoded SAML response from the IdP.
+        RelayState:
+          type: string
+          description: The frontend URL where redirect the authenticated user.
+      required:
+      - RelayState
+      - SAMLResponse
+    PatchedUser_SourceUpdateUserSource:
+      anyOf:
+      - $ref: '#/components/schemas/LocalBaserowUserSourceUpdateUserSource'
+    User_SourceUserSource:
+      oneOf:
+      - $ref: '#/components/schemas/LocalBaserowUserSourceUserSource'
+      discriminator:
+        propertyName: type
+        mapping:
+          local_baserow: '#/components/schemas/LocalBaserowUserSourceUserSource'
+    PatchedMoveUserSource:
+      type: object
+      description: Serializer used when moving a user source.
+      properties:
+        before_id:
+          type: integer
+          nullable: true
+          description: If provided, the user_source is moved before the user_source with this Id. Otherwise
+            the user_source is placed at the end of the page.
+    LocalBaserowUserSourceUpdateUserSource:
+      type: object
+      description: A serializer to update a user source.
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        integration_id:
+          type: integer
+          description: The related integration id.
+        auth_providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/App_Auth_ProviderBaseAppAuthProvider'
+          description: Auth providers related to this user source.
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        email_field_id:
+          type: integer
+          nullable: true
+          description: The id of the field to use as email for the user account.
+        name_field_id:
+          type: integer
+          nullable: true
+          description: The id of the field that contains the user name.
+        role_field_id:
+          type: integer
+          nullable: true
+          description: The id of the field that contains the user role.
+    LocalBaserowUserSourceUserSource:
+      type: object
+      description: Basic user_source serializer mostly for returned values.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        uid:
+          type: string
+          readOnly: true
+          description: Unique id for this user source.
+        application_id:
+          type: integer
+          readOnly: true
+        integration_id:
+          type: integer
+          nullable: true
+          description: The Integration used to establish the connection with the service.
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the user_source.
+        name:
+          type: string
+          readOnly: true
+        order:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,20}(?:\.\d{0,20})?$
+          readOnly: true
+          description: Lowest first.
+        auth_providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/App_Auth_ProviderAppAuthProvider'
+          description: Auth providers related to this user source.
+        user_count:
+          type: integer
+          readOnly: true
+          description: The total number of users in the user source.
+        user_count_updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          description: When the last user count took place.
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        email_field_id:
+          type: integer
+          nullable: true
+          description: The id of the field to use as email for the user account.
+        name_field_id:
+          type: integer
+          nullable: true
+          description: The id of the field that contains the user name.
+        role_field_id:
+          type: integer
+          nullable: true
+          description: The id of the field that contains the user role.
+      required:
+      - application_id
+      - id
+      - integration_id
+      - name
+      - order
+      - type
+      - uid
+      - user_count
+      - user_count_updated_at
+    App_Auth_ProviderBaseAppAuthProvider:
+      oneOf:
+      - $ref: '#/components/schemas/LocalBaserowPasswordAppAuthProviderBaseAppAuthProvider'
+      - $ref: '#/components/schemas/SamlAppAuthProviderModelBaseAppAuthProvider'
+      - $ref: '#/components/schemas/OpenIdConnectAppAuthProviderModelBaseAppAuthProvider'
+      discriminator:
+        propertyName: type
+        mapping:
+          local_baserow_password: '#/components/schemas/LocalBaserowPasswordAppAuthProviderBaseAppAuthProvider'
+          saml: '#/components/schemas/SamlAppAuthProviderModelBaseAppAuthProvider'
+          openid_connect: '#/components/schemas/OpenIdConnectAppAuthProviderModelBaseAppAuthProvider'
+    App_Auth_ProviderAppAuthProvider:
+      oneOf:
+      - $ref: '#/components/schemas/LocalBaserowPasswordAppAuthProviderAppAuthProvider'
+      - $ref: '#/components/schemas/SamlAppAuthProviderModelAppAuthProvider'
+      - $ref: '#/components/schemas/OpenIdConnectAppAuthProviderModelAppAuthProvider'
+      discriminator:
+        propertyName: type
+        mapping:
+          local_baserow_password: '#/components/schemas/LocalBaserowPasswordAppAuthProviderAppAuthProvider'
+          saml: '#/components/schemas/SamlAppAuthProviderModelAppAuthProvider'
+          openid_connect: '#/components/schemas/OpenIdConnectAppAuthProviderModelAppAuthProvider'
+    OpenIdConnectAppAuthProviderModelBaseAppAuthProvider:
+      type: object
+      description: 'This serializer allow to set the type of an app_auth_provider and the
+
+        app_auth_provider id before which we want to insert the new app_auth_provider.'
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type128Enum'
+          description: 'The type of the app_auth_provider.
+
+
+            * `local_baserow_password` - local_baserow_password
+
+            * `saml` - saml
+
+            * `openid_connect` - openid_connect'
+        user_source_id:
+          type: integer
+          readOnly: true
+        domain:
+          type: string
+          nullable: true
+          description: The email domain registered with this provider.
+        name:
+          type: string
+          maxLength: 255
+        base_url:
+          type: string
+          description: The provider base url.
+        client_id:
+          type: string
+          description: App ID, or consumer key
+          maxLength: 191
+        secret:
+          type: string
+          description: API secret, client secret, or consumer secret
+          maxLength: 191
+      required:
+      - base_url
+      - client_id
+      - name
+      - secret
+      - type
+      - user_source_id
+    SamlAppAuthProviderModelBaseAppAuthProvider:
+      type: object
+      description: 'This serializer allow to set the type of an app_auth_provider and the
+
+        app_auth_provider id before which we want to insert the new app_auth_provider.'
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type128Enum'
+          description: 'The type of the app_auth_provider.
+
+
+            * `local_baserow_password` - local_baserow_password
+
+            * `saml` - saml
+
+            * `openid_connect` - openid_connect'
+        user_source_id:
+          type: integer
+          readOnly: true
+        domain:
+          type: string
+          nullable: true
+          description: The email domain registered with this provider.
+        metadata:
+          type: string
+          description: The SAML metadata XML provided by the IdP.
+        is_verified:
+          type: boolean
+          readOnly: true
+          description: Whether or not a user sign in correctly with this SAML provider.
+        email_attr_key:
+          type: string
+          description: The key in the SAML response that contains the email address of the user.
+        first_name_attr_key:
+          type: string
+          description: The key in the SAML response that contains the first name of the user.
+        last_name_attr_key:
+          type: string
+          description: The key in the SAML response that contains the last name of the user. If this is
+            not set, the first name attr will be used as full name.
+      required:
+      - is_verified
+      - metadata
+      - type
+      - user_source_id
+    LocalBaserowPasswordAppAuthProviderBaseAppAuthProvider:
+      type: object
+      description: 'This serializer allow to set the type of an app_auth_provider and the
+
+        app_auth_provider id before which we want to insert the new app_auth_provider.'
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type128Enum'
+          description: 'The type of the app_auth_provider.
+
+
+            * `local_baserow_password` - local_baserow_password
+
+            * `saml` - saml
+
+            * `openid_connect` - openid_connect'
+        user_source_id:
+          type: integer
+          readOnly: true
+        domain:
+          type: string
+          nullable: true
+          description: The email domain registered with this provider.
+        password_field_id:
+          type: integer
+          nullable: true
+          description: The id of the field to use as password for the user account.
+      required:
+      - type
+      - user_source_id
+    LocalBaserowPasswordAppAuthProviderAppAuthProvider:
+      type: object
+      description: Basic app_auth_provider serializer mostly for returned values.
+      properties:
+        type:
+          type: string
+          readOnly: true
+          description: The type of the app_auth_provider.
+        id:
+          type: integer
+          readOnly: true
+        domain:
+          type: string
+          nullable: true
+          description: The email domain registered with this provider.
+          maxLength: 255
+        password_field_id:
+          type: integer
+          nullable: true
+          description: The id of the field to use as password for the user account.
+      required:
+      - id
+      - type
+    SamlAppAuthProviderModelAppAuthProvider:
+      type: object
+      description: Basic app_auth_provider serializer mostly for returned values.
+      properties:
+        type:
+          type: string
+          readOnly: true
+          description: The type of the app_auth_provider.
+        id:
+          type: integer
+          readOnly: true
+        domain:
+          type: string
+          nullable: true
+          description: The email domain registered with this provider.
+          maxLength: 255
+        metadata:
+          type: string
+          description: The SAML metadata XML provided by the IdP.
+        is_verified:
+          type: boolean
+          readOnly: true
+          description: Whether or not a user sign in correctly with this SAML provider.
+        email_attr_key:
+          type: string
+          description: The key in the SAML response that contains the email address of the user.
+        first_name_attr_key:
+          type: string
+          description: The key in the SAML response that contains the first name of the user.
+        last_name_attr_key:
+          type: string
+          description: The key in the SAML response that contains the last name of the user. If this is
+            not set, the first name attr will be used as full name.
+      required:
+      - id
+      - is_verified
+      - metadata
+      - type
+    OpenIdConnectAppAuthProviderModelAppAuthProvider:
+      type: object
+      description: Basic app_auth_provider serializer mostly for returned values.
+      properties:
+        type:
+          type: string
+          readOnly: true
+          description: The type of the app_auth_provider.
+        id:
+          type: integer
+          readOnly: true
+        domain:
+          type: string
+          nullable: true
+          description: The email domain registered with this provider.
+          maxLength: 255
+        name:
+          type: string
+          maxLength: 255
+        base_url:
+          type: string
+          description: The provider base url.
+        client_id:
+          type: string
+          description: App ID, or consumer key
+          maxLength: 191
+        secret:
+          type: string
+          description: API secret, client secret, or consumer secret
+          maxLength: 191
+      required:
+      - base_url
+      - client_id
+      - id
+      - name
+      - secret
+      - type
+    Type128Enum:
+      enum:
+      - local_baserow_password
+      - saml
+      - openid_connect
+      type: string
+      description: '* `local_baserow_password` - local_baserow_password
+
+        * `saml` - saml
+
+        * `openid_connect` - openid_connect'
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags:
+- name: User sources

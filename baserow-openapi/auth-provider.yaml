@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/auth-provider/login-options/:
+    get:
+      operationId: list_auth_providers_login_options
+      description: Lists the available login options for the configured authentication providers.
+      tags:
+      - Auth
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+components:
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags: []

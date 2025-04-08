@@ -1,0 +1,369 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/snapshots/{snapshot_id}/:
+    delete:
+      operationId: delete_snapshot
+      description: Deletes a snapshot. Deleting a snapshot doesn't affect the application that the snapshot
+        is made from and doesn't affect any applications that were created by restoring it. Snapshot deletion
+        is permanent and can't be undone.
+      parameters:
+      - in: path
+        name: snapshot_id
+        schema:
+          type: integer
+        description: Id of the snapshot to delete.
+        required: true
+      tags:
+      - Snapshots
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_APPLICATION_OPERATION_NOT_SUPPORTED
+                    - ERROR_SNAPSHOT_IS_BEING_RESTORED
+                    - ERROR_SNAPSHOT_IS_BEING_DELETED
+                    - ERROR_SNAPSHOT_OPERATION_LIMIT_EXCEEDED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_SNAPSHOT_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/snapshots/{snapshot_id}/restore/:
+    post:
+      operationId: restore_snapshot
+      description: Restores a snapshot. When an application snapshot is restored, a new application will
+        be created in the same workspace that the original application was placed in with the name of
+        the snapshot and data that were in the original application at the time the snapshot was taken.
+        The original application that the snapshot was taken from is unaffected. Snapshots can be restored
+        multiple times and a number suffix is added to the new application name in the case of a collision.
+      parameters:
+      - in: path
+        name: snapshot_id
+        schema:
+          type: integer
+        description: Id of the snapshot to restore.
+        required: true
+      tags:
+      - Snapshots
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_APPLICATION_OPERATION_NOT_SUPPORTED
+                    - ERROR_SNAPSHOT_IS_BEING_RESTORED
+                    - ERROR_SNAPSHOT_IS_BEING_DELETED
+                    - ERROR_SNAPSHOT_OPERATION_LIMIT_EXCEEDED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_SNAPSHOT_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/snapshots/application/{application_id}/:
+    get:
+      operationId: list_snapshots
+      description: Lists snapshots that were created for a given application.
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: integer
+        description: Application ID for which to list snapshots.
+        required: true
+      tags:
+      - Snapshots
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Snapshot'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_APPLICATION_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    post:
+      operationId: create_snapshot
+      description: Creates a new application snapshot. Snapshots represent a state of an application at
+        a specific point in time and can be restored later, making it easy to create backups of entire
+        applications.
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: integer
+        description: Application ID for which to list snapshots.
+        required: true
+      tags:
+      - Snapshots
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Snapshot'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Snapshot'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Snapshot'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_MAXIMUM_SNAPSHOTS_REACHED
+                    - ERROR_APPLICATION_OPERATION_NOT_SUPPORTED
+                    - ERROR_SNAPSHOT_IS_BEING_CREATED
+                    - ERROR_SNAPSHOT_NAME_NOT_UNIQUE
+                    - ERROR_SNAPSHOT_OPERATION_LIMIT_EXCEEDED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_APPLICATION_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  schemas:
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+      required:
+      - id
+      - progress_percentage
+      - state
+      - type
+    Snapshot:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 160
+        snapshot_from_application:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - id
+      - name
+      - snapshot_from_application
+    User:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
+      - username
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags:
+- name: Snapshots

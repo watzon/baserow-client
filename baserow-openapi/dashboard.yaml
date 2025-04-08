@@ -1,0 +1,1582 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/dashboard/{dashboard_id}/data-sources/:
+    get:
+      operationId: list_dashboard_data_sources
+      description: Lists all the data sources of the dashboard if the user has access to the related dashboard's
+        workspace.
+      parameters:
+      - in: path
+        name: dashboard_id
+        schema:
+          type: integer
+        description: Returns only the data sources of the dashboard related to the provided Id.
+        required: true
+      tags:
+      - Dashboard data sources
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Integration_ServiceDashboardDataSource'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_PERMISSION_DENIED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_DASHBOARD_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/dashboard/{dashboard_id}/widgets/:
+    get:
+      operationId: list_dashboard_widgets
+      description: 'Lists all the widgets of the dashboard related to the provided parameter if the user
+        has access to the related workspace. '
+      parameters:
+      - in: path
+        name: dashboard_id
+        schema:
+          type: integer
+        description: Returns only the widgets of the dashboard related to the provided Id.
+        required: true
+      tags:
+      - Dashboard widgets
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dashboard_WidgetWidget'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_PERMISSION_DENIED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_DASHBOARD_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    post:
+      operationId: create_dashboard_widget
+      description: Creates a new dashboard widget
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: header
+        name: ClientUndoRedoActionGroupId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular action group.Then calling the undo/redo endpoint with the same ClientSessionId
+          header, all the actions belonging to the same action group can be undone/redone together in
+          a single API call.
+      - in: path
+        name: dashboard_id
+        schema:
+          type: integer
+        description: Creates a widget for the dashboard related to the provided value.
+        required: true
+      tags:
+      - Dashboard widgets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dashboard_WidgetCreateWidget'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Dashboard_WidgetCreateWidget'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Dashboard_WidgetCreateWidget'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard_WidgetWidget'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                    - ERROR_WIDGET_TYPE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_PERMISSION_DENIED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_DASHBOARD_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/dashboard/data-sources/{data_source_id}/:
+    patch:
+      operationId: update_dashboard_data_source
+      description: Updates an existing dashboard data source.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: header
+        name: ClientUndoRedoActionGroupId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular action group.Then calling the undo/redo endpoint with the same ClientSessionId
+          header, all the actions belonging to the same action group can be undone/redone together in
+          a single API call.
+      - in: path
+        name: data_source_id
+        schema:
+          type: integer
+        description: The id of the dashboard data source.
+        required: true
+      tags:
+      - Dashboard data sources
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedIntegration_ServiceUpdateDashboardDataSource'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedIntegration_ServiceUpdateDashboardDataSource'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedIntegration_ServiceUpdateDashboardDataSource'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Integration_ServiceDashboardDataSource'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                    - ERROR_SERVICE_INVALID_TYPE
+                    - ERROR_SERVICE_CONFIGURATION_NOT_ALLOWED
+                    - ERROR_DASHBOARD_DATA_SOURCE_CANNOT_USE_SERVICE_TYPE
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_PERMISSION_DENIED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_DASHBOARD_DATA_SOURCE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/dashboard/data-sources/{data_source_id}/dispatch/:
+    post:
+      operationId: dispatch_dashboard_data_source
+      description: Dispatches the service of the related data source and returns the result.
+      parameters:
+      - in: path
+        name: data_source_id
+        schema:
+          type: integer
+        description: The id of the data source you want to call the dispatch for
+        required: true
+      tags:
+      - Dashboard data sources
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_DASHBOARD_DATA_SOURCE_IMPROPERLY_CONFIGURED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_PERMISSION_DENIED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_DASHBOARD_DATA_SOURCE_DOES_NOT_EXIST
+                    - ERROR_DASHBOARD_DATA_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/dashboard/widgets/{widget_id}/:
+    patch:
+      operationId: update_dashboard_widget
+      description: Updates an existing dashboard widget.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: header
+        name: ClientUndoRedoActionGroupId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular action group.Then calling the undo/redo endpoint with the same ClientSessionId
+          header, all the actions belonging to the same action group can be undone/redone together in
+          a single API call.
+      - in: path
+        name: widget_id
+        schema:
+          type: integer
+        description: The id of the widget
+        required: true
+      tags:
+      - Dashboard widgets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboard_WidgetUpdateWidget'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboard_WidgetUpdateWidget'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboard_WidgetUpdateWidget'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard_WidgetWidget'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_PERMISSION_DENIED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_WIDGET_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    delete:
+      operationId: delete_dashboard_widget
+      description: Deletes the widget related to the given id.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: header
+        name: ClientUndoRedoActionGroupId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular action group.Then calling the undo/redo endpoint with the same ClientSessionId
+          header, all the actions belonging to the same action group can be undone/redone together in
+          a single API call.
+      - in: path
+        name: widget_id
+        schema:
+          type: integer
+        description: The id of the widget
+        required: true
+      tags:
+      - Dashboard widgets
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_PERMISSION_DENIED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_WIDGET_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  schemas:
+    Dashboard_WidgetWidget:
+      oneOf:
+      - $ref: '#/components/schemas/SummaryWidgetWidget'
+      - $ref: '#/components/schemas/ChartWidgetWidget'
+      discriminator:
+        propertyName: type
+        mapping:
+          summary: '#/components/schemas/SummaryWidgetWidget'
+          chart: '#/components/schemas/ChartWidgetWidget'
+    PatchedIntegration_ServiceUpdateDashboardDataSource:
+      anyOf:
+      - $ref: '#/components/schemas/LocalBaserowGetRowUpdateDashboardDataSource'
+      - $ref: '#/components/schemas/LocalBaserowListRowsUpdateDashboardDataSource'
+      - $ref: '#/components/schemas/LocalBaserowAggregateRowsUpdateDashboardDataSource'
+      - $ref: '#/components/schemas/LocalBaserowUpsertRowUpdateDashboardDataSource'
+      - $ref: '#/components/schemas/LocalBaserowDeleteRowUpdateDashboardDataSource'
+      - $ref: '#/components/schemas/LocalBaserowGroupedAggregateRowsUpdateDashboardDataSource'
+    PatchedDashboard_WidgetUpdateWidget:
+      anyOf:
+      - $ref: '#/components/schemas/SummaryWidgetUpdateWidget'
+      - $ref: '#/components/schemas/ChartWidgetUpdateWidget'
+    Integration_ServiceDashboardDataSource:
+      oneOf:
+      - $ref: '#/components/schemas/LocalBaserowGetRowDashboardDataSource'
+      - $ref: '#/components/schemas/LocalBaserowListRowsDashboardDataSource'
+      - $ref: '#/components/schemas/LocalBaserowAggregateRowsDashboardDataSource'
+      - $ref: '#/components/schemas/LocalBaserowUpsertRowDashboardDataSource'
+      - $ref: '#/components/schemas/LocalBaserowDeleteRowDashboardDataSource'
+      - $ref: '#/components/schemas/LocalBaserowGroupedAggregateRowsDashboardDataSource'
+      discriminator:
+        propertyName: type
+        mapping:
+          local_baserow_get_row: '#/components/schemas/LocalBaserowGetRowDashboardDataSource'
+          local_baserow_list_rows: '#/components/schemas/LocalBaserowListRowsDashboardDataSource'
+          local_baserow_aggregate_rows: '#/components/schemas/LocalBaserowAggregateRowsDashboardDataSource'
+          local_baserow_upsert_row: '#/components/schemas/LocalBaserowUpsertRowDashboardDataSource'
+          local_baserow_delete_row: '#/components/schemas/LocalBaserowDeleteRowDashboardDataSource'
+          local_baserow_grouped_aggregate_rows: '#/components/schemas/LocalBaserowGroupedAggregateRowsDashboardDataSource'
+    Dashboard_WidgetCreateWidget:
+      oneOf:
+      - $ref: '#/components/schemas/SummaryWidgetCreateWidget'
+      - $ref: '#/components/schemas/ChartWidgetCreateWidget'
+      discriminator:
+        propertyName: type
+        mapping:
+          summary: '#/components/schemas/SummaryWidgetCreateWidget'
+          chart: '#/components/schemas/ChartWidgetCreateWidget'
+    SummaryWidgetWidget:
+      type: object
+      description: Basic widget serializer mostly for returned values.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        dashboard_id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the widget.
+        order:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,20}(?:\.\d{0,20})?$
+          readOnly: true
+          description: Lowest first.
+        data_source_id:
+          type: integer
+          description: References a data source field for the widget.
+      required:
+      - dashboard_id
+      - description
+      - id
+      - order
+      - title
+      - type
+    ChartWidgetWidget:
+      type: object
+      description: Basic widget serializer mostly for returned values.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        dashboard_id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the widget.
+        order:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,20}(?:\.\d{0,20})?$
+          readOnly: true
+          description: Lowest first.
+        data_source_id:
+          type: integer
+          description: References a data source field for the widget.
+      required:
+      - dashboard_id
+      - description
+      - id
+      - order
+      - title
+      - type
+    LocalBaserowAggregateRowsUpdateDashboardDataSource:
+      type: object
+      description: 'A serializer mixin for services which implement the local Baserow filterable mixin.
+
+        It ensures that when serialize the service, *all* filters (including those pointing
+
+        to trashed fields) are serialized.'
+      properties:
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        name:
+          type: string
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        view_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow view we want the data for.
+        filter_type:
+          allOf:
+          - $ref: '#/components/schemas/ConditionTypeEnum'
+          description: 'Indicates whether all the rows should apply to all filters (AND) or to any filter
+            (OR).
+
+
+            * `AND` - And
+
+            * `OR` - Or'
+        search_query:
+          type: string
+          description: The query to apply to the service to narrow the results down.
+          maxLength: 225
+        field_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow field we want to aggregate on.
+        aggregation_type:
+          type: string
+          description: The field aggregation type.
+          maxLength: 48
+    LocalBaserowUpsertRowUpdateDashboardDataSource:
+      type: object
+      properties:
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        name:
+          type: string
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        field_mappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalBaserowTableServiceFieldMapping'
+          description: The field mapping associated with this service.
+        row_id:
+          type: string
+          description: A formula for defining the intended row.
+    LocalBaserowGroupedAggregateRowsUpdateDashboardDataSource:
+      type: object
+      description: 'A serializer mixin for services which implement the local Baserow filterable mixin.
+
+        It ensures that when serialize the service, *all* filters (including those pointing
+
+        to trashed fields) are serialized.'
+      properties:
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        name:
+          type: string
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        view_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow view we want the data for.
+        filter_type:
+          allOf:
+          - $ref: '#/components/schemas/ConditionTypeEnum'
+          description: 'Indicates whether all the rows should apply to all filters (AND) or to any filter
+            (OR).
+
+
+            * `AND` - And
+
+            * `OR` - Or'
+        aggregation_series:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalBaserowTableServiceAggregationSeries'
+        aggregation_group_bys:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalBaserowTableServiceAggregationGroupBy'
+        aggregation_sorts:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalBaserowTableServiceAggregationSortBy'
+    LocalBaserowDeleteRowUpdateDashboardDataSource:
+      type: object
+      properties:
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        name:
+          type: string
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        row_id:
+          type: string
+          description: A formula for defining the intended row.
+    LocalBaserowGetRowUpdateDashboardDataSource:
+      type: object
+      description: 'A serializer mixin for services which implement the local Baserow filterable mixin.
+
+        It ensures that when serialize the service, *all* filters (including those pointing
+
+        to trashed fields) are serialized.'
+      properties:
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        name:
+          type: string
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        view_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow view we want the data for.
+        filter_type:
+          allOf:
+          - $ref: '#/components/schemas/ConditionTypeEnum'
+          description: 'Indicates whether all the rows should apply to all filters (AND) or to any filter
+            (OR).
+
+
+            * `AND` - And
+
+            * `OR` - Or'
+        search_query:
+          type: string
+          description: Any search queries to apply to the service when it is dispatched.
+        row_id:
+          type: string
+          description: A formula for defining the intended row.
+    LocalBaserowListRowsUpdateDashboardDataSource:
+      type: object
+      description: 'A serializer mixin for services which implement the local Baserow filterable mixin.
+
+        It ensures that when serialize the service, *all* filters (including those pointing
+
+        to trashed fields) are serialized.'
+      properties:
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        name:
+          type: string
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        view_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow view we want the data for.
+        filter_type:
+          allOf:
+          - $ref: '#/components/schemas/ConditionTypeEnum'
+          description: 'Indicates whether all the rows should apply to all filters (AND) or to any filter
+            (OR).
+
+
+            * `AND` - And
+
+            * `OR` - Or'
+        search_query:
+          type: string
+          description: Any search queries to apply to the service when it is dispatched.
+    SummaryWidgetUpdateWidget:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 255
+    ChartWidgetUpdateWidget:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 255
+    LocalBaserowAggregateRowsDashboardDataSource:
+      type: object
+      description: 'A serializer mixin for services which implement the local Baserow filterable mixin.
+
+        It ensures that when serialize the service, *all* filters (including those pointing
+
+        to trashed fields) are serialized.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          description: Data source id.
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        type:
+          type: string
+          readOnly: true
+          description: The type of the data source.
+        schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema of the service.
+        context_data:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The context data of the service.
+        context_data_schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema context data of the service.
+        name:
+          type: string
+          readOnly: true
+          description: Human name for this data source.
+        dashboard_id:
+          type: integer
+          readOnly: true
+          description: Dashboard this data source is linked to.
+        order:
+          type: string
+          readOnly: true
+          description: Lowest first.
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        view_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow view we want the data for.
+        filter_type:
+          allOf:
+          - $ref: '#/components/schemas/ConditionTypeEnum'
+          description: 'Indicates whether all the rows should apply to all filters (AND) or to any filter
+            (OR).
+
+
+            * `AND` - And
+
+            * `OR` - Or'
+        search_query:
+          type: string
+          description: The query to apply to the service to narrow the results down.
+          maxLength: 225
+        field_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow field we want to aggregate on.
+        aggregation_type:
+          type: string
+          description: The field aggregation type.
+          maxLength: 48
+      required:
+      - context_data
+      - context_data_schema
+      - dashboard_id
+      - id
+      - name
+      - order
+      - schema
+      - type
+    LocalBaserowListRowsDashboardDataSource:
+      type: object
+      description: 'A serializer mixin for services which implement the local Baserow filterable mixin.
+
+        It ensures that when serialize the service, *all* filters (including those pointing
+
+        to trashed fields) are serialized.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          description: Data source id.
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        type:
+          type: string
+          readOnly: true
+          description: The type of the data source.
+        schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema of the service.
+        context_data:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The context data of the service.
+        context_data_schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema context data of the service.
+        name:
+          type: string
+          readOnly: true
+          description: Human name for this data source.
+        dashboard_id:
+          type: integer
+          readOnly: true
+          description: Dashboard this data source is linked to.
+        order:
+          type: string
+          readOnly: true
+          description: Lowest first.
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        view_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow view we want the data for.
+        filter_type:
+          allOf:
+          - $ref: '#/components/schemas/ConditionTypeEnum'
+          description: 'Indicates whether all the rows should apply to all filters (AND) or to any filter
+            (OR).
+
+
+            * `AND` - And
+
+            * `OR` - Or'
+        search_query:
+          type: string
+          description: Any search queries to apply to the service when it is dispatched.
+      required:
+      - context_data
+      - context_data_schema
+      - dashboard_id
+      - id
+      - name
+      - order
+      - schema
+      - type
+    LocalBaserowGetRowDashboardDataSource:
+      type: object
+      description: 'A serializer mixin for services which implement the local Baserow filterable mixin.
+
+        It ensures that when serialize the service, *all* filters (including those pointing
+
+        to trashed fields) are serialized.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          description: Data source id.
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        type:
+          type: string
+          readOnly: true
+          description: The type of the data source.
+        schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema of the service.
+        context_data:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The context data of the service.
+        context_data_schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema context data of the service.
+        name:
+          type: string
+          readOnly: true
+          description: Human name for this data source.
+        dashboard_id:
+          type: integer
+          readOnly: true
+          description: Dashboard this data source is linked to.
+        order:
+          type: string
+          readOnly: true
+          description: Lowest first.
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        view_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow view we want the data for.
+        filter_type:
+          allOf:
+          - $ref: '#/components/schemas/ConditionTypeEnum'
+          description: 'Indicates whether all the rows should apply to all filters (AND) or to any filter
+            (OR).
+
+
+            * `AND` - And
+
+            * `OR` - Or'
+        search_query:
+          type: string
+          description: Any search queries to apply to the service when it is dispatched.
+        row_id:
+          type: string
+          description: A formula for defining the intended row.
+      required:
+      - context_data
+      - context_data_schema
+      - dashboard_id
+      - id
+      - name
+      - order
+      - schema
+      - type
+    LocalBaserowDeleteRowDashboardDataSource:
+      type: object
+      description: 'Basic data source serializer mostly for returned values.
+
+        This serializer flatten the service properties so that from
+
+        an API POV only the data source object exists.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          description: Data source id.
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        type:
+          type: string
+          readOnly: true
+          description: The type of the data source.
+        schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema of the service.
+        context_data:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The context data of the service.
+        context_data_schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema context data of the service.
+        name:
+          type: string
+          readOnly: true
+          description: Human name for this data source.
+        dashboard_id:
+          type: integer
+          readOnly: true
+          description: Dashboard this data source is linked to.
+        order:
+          type: string
+          readOnly: true
+          description: Lowest first.
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        row_id:
+          type: string
+          description: A formula for defining the intended row.
+      required:
+      - context_data
+      - context_data_schema
+      - dashboard_id
+      - id
+      - name
+      - order
+      - schema
+      - type
+    LocalBaserowGroupedAggregateRowsDashboardDataSource:
+      type: object
+      description: 'A serializer mixin for services which implement the local Baserow filterable mixin.
+
+        It ensures that when serialize the service, *all* filters (including those pointing
+
+        to trashed fields) are serialized.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          description: Data source id.
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        type:
+          type: string
+          readOnly: true
+          description: The type of the data source.
+        schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema of the service.
+        context_data:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The context data of the service.
+        context_data_schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema context data of the service.
+        name:
+          type: string
+          readOnly: true
+          description: Human name for this data source.
+        dashboard_id:
+          type: integer
+          readOnly: true
+          description: Dashboard this data source is linked to.
+        order:
+          type: string
+          readOnly: true
+          description: Lowest first.
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        view_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow view we want the data for.
+        filter_type:
+          allOf:
+          - $ref: '#/components/schemas/ConditionTypeEnum'
+          description: 'Indicates whether all the rows should apply to all filters (AND) or to any filter
+            (OR).
+
+
+            * `AND` - And
+
+            * `OR` - Or'
+        aggregation_series:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalBaserowTableServiceAggregationSeries'
+        aggregation_group_bys:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalBaserowTableServiceAggregationGroupBy'
+        aggregation_sorts:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalBaserowTableServiceAggregationSortBy'
+      required:
+      - context_data
+      - context_data_schema
+      - dashboard_id
+      - id
+      - name
+      - order
+      - schema
+      - type
+    LocalBaserowUpsertRowDashboardDataSource:
+      type: object
+      description: 'Basic data source serializer mostly for returned values.
+
+        This serializer flatten the service properties so that from
+
+        an API POV only the data source object exists.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          description: Data source id.
+        integration_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow integration we want the data for.
+        type:
+          type: string
+          readOnly: true
+          description: The type of the data source.
+        schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema of the service.
+        context_data:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The context data of the service.
+        context_data_schema:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: The schema context data of the service.
+        name:
+          type: string
+          readOnly: true
+          description: Human name for this data source.
+        dashboard_id:
+          type: integer
+          readOnly: true
+          description: Dashboard this data source is linked to.
+        order:
+          type: string
+          readOnly: true
+          description: Lowest first.
+        table_id:
+          type: integer
+          nullable: true
+          description: The id of the Baserow table we want the data for.
+        field_mappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalBaserowTableServiceFieldMapping'
+          description: The field mapping associated with this service.
+        row_id:
+          type: string
+          description: A formula for defining the intended row.
+      required:
+      - context_data
+      - context_data_schema
+      - dashboard_id
+      - id
+      - name
+      - order
+      - schema
+      - type
+    ChartWidgetCreateWidget:
+      type: object
+      description: This serializer allow to set the type of the new widget.
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 255
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type7baEnum'
+          description: 'The type of the widget.
+
+
+            * `summary` - summary
+
+            * `chart` - chart'
+      required:
+      - title
+      - type
+    SummaryWidgetCreateWidget:
+      type: object
+      description: This serializer allow to set the type of the new widget.
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 255
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type7baEnum'
+          description: 'The type of the widget.
+
+
+            * `summary` - summary
+
+            * `chart` - chart'
+      required:
+      - title
+      - type
+    ConditionTypeEnum:
+      enum:
+      - AND
+      - OR
+      type: string
+      description: '* `AND` - And
+
+        * `OR` - Or'
+    LocalBaserowTableServiceFieldMapping:
+      type: object
+      properties:
+        field_id:
+          type: integer
+          description: The primary key of the associated database table field.
+        enabled:
+          type: boolean
+          description: Indicates whether the field mapping is enabled or not.
+        value:
+          type: string
+      required:
+      - enabled
+      - field_id
+      - value
+    LocalBaserowTableServiceAggregationSortBy:
+      type: object
+      properties:
+        order:
+          type: integer
+          readOnly: true
+        sort_on:
+          $ref: '#/components/schemas/SortOnEnum'
+        reference:
+          type: string
+          maxLength: 255
+        direction:
+          $ref: '#/components/schemas/DirectionEnum'
+      required:
+      - direction
+      - order
+      - reference
+      - sort_on
+    LocalBaserowTableServiceAggregationGroupBy:
+      type: object
+      properties:
+        order:
+          type: integer
+          readOnly: true
+        field_id:
+          type: integer
+          nullable: true
+      required:
+      - field_id
+      - order
+    LocalBaserowTableServiceAggregationSeries:
+      type: object
+      properties:
+        order:
+          type: integer
+          readOnly: true
+        aggregation_type:
+          type: string
+          description: The field aggregation type.
+          maxLength: 48
+        field_id:
+          type: integer
+          nullable: true
+      required:
+      - field_id
+      - order
+    Type7baEnum:
+      enum:
+      - summary
+      - chart
+      type: string
+      description: '* `summary` - summary
+
+        * `chart` - chart'
+    DirectionEnum:
+      enum:
+      - ASC
+      - DESC
+      type: string
+      description: '* `ASC` - Ascending
+
+        * `DESC` - Descending'
+    SortOnEnum:
+      enum:
+      - SERIES
+      - GROUP_BY
+      - PRIMARY
+      type: string
+      description: '* `SERIES` - Series
+
+        * `GROUP_BY` - Group by
+
+        * `PRIMARY` - Primary'
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags: []

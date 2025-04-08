@@ -1,0 +1,581 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/row_comments/{table_id}/{row_id}/:
+    get:
+      operationId: get_row_comments
+      description: 'Returns all row comments for the specified table and row.
+
+
+        This is a **premium** feature.'
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Defines how many rows should be returned.
+      - in: query
+        name: offset
+        schema:
+          type: integer
+        description: Can only be used in combination with the `limit` parameter and defines from which
+          offset the rows should be returned.
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Defines which page of rows should be returned. Either the `page` or `limit` can be
+          provided, not both.
+      - in: path
+        name: row_id
+        schema:
+          type: integer
+        description: The row to get row comments for.
+        required: true
+      - in: query
+        name: size
+        schema:
+          type: integer
+        description: Can only be used in combination with the `page` parameter and defines how many rows
+          should be returned.
+      - in: path
+        name: table_id
+        schema:
+          type: integer
+        description: The table the row is in.
+        required: true
+      tags:
+      - Database table rows
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginationSerializerRowComment'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TABLE_DOES_NOT_EXIST
+                    - ERROR_ROW_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    post:
+      operationId: create_row_comment
+      description: 'Creates a comment on the specified row.
+
+
+        This is a **premium** feature.'
+      parameters:
+      - in: path
+        name: row_id
+        schema:
+          type: integer
+        description: The row to create a comment for.
+        required: true
+      - in: path
+        name: table_id
+        schema:
+          type: integer
+        description: The table to find the row to comment on in.
+        required: true
+      tags:
+      - Database table rows
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RowCommentCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RowCommentCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RowCommentCreate'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RowComment'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_INVALID_COMMENT_MENTION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TABLE_DOES_NOT_EXIST
+                    - ERROR_ROW_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/row_comments/{table_id}/{row_id}/notification-mode/:
+    put:
+      operationId: update_row_comment_notification_mode
+      description: 'Updates the user''s notification preferences for comments made on a specified table
+        row.
+
+
+        This is a **premium** feature.'
+      parameters:
+      - in: path
+        name: row_id
+        schema:
+          type: integer
+        description: The row on which to manage the comment subscription.
+        required: true
+      - in: path
+        name: table_id
+        schema:
+          type: integer
+        description: The table id where the row is in.
+        required: true
+      tags:
+      - Database table rows
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RowCommentsNotificationMode'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RowCommentsNotificationMode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RowCommentsNotificationMode'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TABLE_DOES_NOT_EXIST
+                    - ERROR_ROW_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/row_comments/{table_id}/comment/{comment_id}/:
+    patch:
+      operationId: update_row_comment
+      description: 'Update a row comment.
+
+
+        This is a **premium** feature.'
+      parameters:
+      - in: path
+        name: comment_id
+        schema:
+          type: integer
+        description: The row comment to update.
+        required: true
+      - in: path
+        name: table_id
+        schema:
+          type: integer
+        description: The table the row is in.
+        required: true
+      tags:
+      - Database table rows
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RowComment'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_USER_NOT_COMMENT_AUTHOR
+                    - ERROR_INVALID_COMMENT_MENTION
+                    - ERROR_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_NO_PERMISSION_TO_TABLE
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TABLE_DOES_NOT_EXIST
+                    - ERROR_ROW_COMMENT_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    delete:
+      operationId: delete_row_comment
+      description: 'Delete a row comment.
+
+
+        This is a **premium** feature.'
+      parameters:
+      - in: path
+        name: comment_id
+        schema:
+          type: integer
+        description: The row comment to delete.
+        required: true
+      - in: path
+        name: table_id
+        schema:
+          type: integer
+        description: The table the row is in.
+        required: true
+      tags:
+      - Database table rows
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RowComment'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_USER_NOT_COMMENT_AUTHOR
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_NO_PERMISSION_TO_TABLE
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TABLE_DOES_NOT_EXIST
+                    - ERROR_ROW_COMMENT_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  schemas:
+    RowCommentsNotificationMode:
+      type: object
+      properties:
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/Mode884Enum'
+          description: 'The mode to use to receive notifications for new comments on a table row.
+
+
+            * `all` - all
+
+            * `mentions` - mentions'
+      required:
+      - mode
+    PaginationSerializerRowComment:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: The total amount of results.
+        next:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to the next page.
+        previous:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to the previous page.
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RowComment'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    RowCommentCreate:
+      type: object
+      properties:
+        message:
+          description: The rich text comment content.
+      required:
+      - message
+    RowComment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user_id:
+          type: integer
+          nullable: true
+          description: The user who made the comment.
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 32
+        table_id:
+          type: integer
+          description: 'The table the row this comment is for is found in. '
+          readOnly: true
+        row_id:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: The id of the row the comment is for.
+        message:
+          type: string
+          readOnly: true
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_on:
+          type: string
+          format: date-time
+          readOnly: true
+        edited:
+          type: string
+          readOnly: true
+        trashed:
+          type: boolean
+      required:
+      - created_on
+      - edited
+      - id
+      - message
+      - row_id
+      - table_id
+      - updated_on
+      - user_id
+    Mode884Enum:
+      enum:
+      - all
+      - mentions
+      type: string
+      description: '* `all` - all
+
+        * `mentions` - mentions'
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags:
+- name: Database table rows

@@ -1,0 +1,172 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/_health/celery-queue/:
+    get:
+      operationId: celery_queue_size_check
+      description: Health check endpoint to check if the the celery and/or export celery queue has  exceeded
+        the maximum healthy size. Responds with `200` if there there are less than 10 in all queues provided.
+        Otherwise responds with a `503`.
+      parameters:
+      - in: query
+        name: queue
+        schema:
+          type: string
+        description: The name of the queues to check. Can be provided multiple times. Accepts either `celery`
+          or `export`.
+      tags:
+      - Health
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+        '400':
+          description: No response body
+        '404':
+          description: No response body
+        '503':
+          description: No response body
+  /api/_health/email/:
+    post:
+      operationId: email_tester
+      description: Sends a test email to the provided email address. Useful for testing Baserow's email
+        configuration as errors are clearly returned.
+      tags:
+      - Health
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailTesterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailTesterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailTesterRequest'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTesterResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/_health/full/:
+    get:
+      operationId: full_health_check
+      description: Runs a full health check testing as many services and systems as possible. These health
+        checks can be expensive operations such as writing files to storage etc.
+      tags:
+      - Health
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullHealthCheck'
+          description: ''
+components:
+  schemas:
+    EmailTesterRequest:
+      type: object
+      properties:
+        target_email:
+          type: string
+          format: email
+      required:
+      - target_email
+    FullHealthCheck:
+      type: object
+      properties:
+        passing:
+          type: boolean
+          readOnly: true
+          description: False if any of the critical service health checks are failing, true otherwise.
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+          readOnly: true
+          description: An object keyed by the name of the health check and the value being the result.
+        celery_queue_size:
+          type: integer
+          description: The number of enqueued celery tasks.
+        celery_export_queue_size:
+          type: integer
+          description: The number of enqueued celery export worker tasks.
+      required:
+      - celery_export_queue_size
+      - celery_queue_size
+      - checks
+      - passing
+    EmailTesterResponse:
+      type: object
+      properties:
+        succeeded:
+          type: boolean
+          description: Whether or not the test email was sent successfully.
+        error_stack:
+          type: string
+          nullable: true
+          description: The full stack trace and error message if the test email failed.
+        error_type:
+          type: string
+          nullable: true
+          description: The type of error that occurred if the test email failed.
+        error:
+          type: string
+          nullable: true
+          description: A short message describing the error that occured if the test email failed
+      required:
+      - succeeded
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags: []

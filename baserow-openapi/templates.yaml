@@ -1,0 +1,1774 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/templates/:
+    get:
+      operationId: list_templates
+      description: Lists all the template categories and the related templates that are in that category.
+        The template's `workspace_id` can be used for previewing purposes because that workspace contains
+        the applications that are in the template. All the `get` and `list` endpoints related to that
+        workspace are publicly accessible.
+      tags:
+      - Templates
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TemplateCategories'
+          description: ''
+  /api/templates/install/{workspace_id}/{template_id}/:
+    post:
+      operationId: install_template
+      description: (Deprecated) Installs the applications of the given template into the given workspace
+        if the user has access to that workspace. The response contains those newly created applications.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: header
+        name: ClientUndoRedoActionGroupId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular action group.Then calling the undo/redo endpoint with the same ClientSessionId
+          header, all the actions belonging to the same action group can be undone/redone together in
+          a single API call.
+      - in: path
+        name: template_id
+        schema:
+          type: integer
+        description: The id related to the template that must be installed.
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: The id related to the workspace where the template applications must be installed
+          into.
+        required: true
+      tags:
+      - Templates
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApplicationApplication'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_TEMPLATE_FILE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                    - ERROR_TEMPLATE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/templates/install/{workspace_id}/{template_id}/async/:
+    post:
+      operationId: install_template_async
+      description: Start an async job to install the applications of the given template into the given
+        workspace if the user has access to that workspace. The response contains those newly created
+        applications.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: header
+        name: ClientUndoRedoActionGroupId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular action group.Then calling the undo/redo endpoint with the same ClientSessionId
+          header, all the actions belonging to the same action group can be undone/redone together in
+          a single API call.
+      - in: path
+        name: template_id
+        schema:
+          type: integer
+        description: The id related to the template that must be installed.
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: The id related to the workspace where the template applications must be installed
+          into.
+        required: true
+      tags:
+      - Templates
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstallTemplateJobTypeResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_TEMPLATE_FILE_DOES_NOT_EXIST
+                    - ERROR_MAX_JOB_COUNT_EXCEEDED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                    - ERROR_TEMPLATE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  schemas:
+    TemplateCategories:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 32
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+          readOnly: true
+      required:
+      - id
+      - name
+      - templates
+    InstallTemplateJobTypeResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        workspace:
+          allOf:
+          - $ref: '#/components/schemas/Workspace'
+          readOnly: true
+        template:
+          allOf:
+          - $ref: '#/components/schemas/Template'
+          readOnly: true
+        installed_applications:
+          readOnly: true
+      required:
+      - id
+      - installed_applications
+      - progress_percentage
+      - state
+      - template
+      - type
+      - workspace
+    ApplicationApplication:
+      oneOf:
+      - $ref: '#/components/schemas/DatabaseApplication'
+      - $ref: '#/components/schemas/BuilderApplication'
+      - $ref: '#/components/schemas/DashboardApplication'
+      discriminator:
+        propertyName: type
+        mapping:
+          database: '#/components/schemas/DatabaseApplication'
+          builder: '#/components/schemas/BuilderApplication'
+          dashboard: '#/components/schemas/DashboardApplication'
+    Template:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 64
+        slug:
+          type: string
+          description: The template slug that is used to match the template with the JSON file name.
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        icon:
+          type: string
+          description: The icon class name that can be used for displaying purposes.
+          maxLength: 32
+        keywords:
+          type: string
+          description: Keywords related to the template that can be used for search.
+        workspace_id:
+          type: integer
+          nullable: true
+          description: The group containing the applications related to the template. The read endpoints
+            related to that group are publicly accessible for preview purposes.
+          readOnly: true
+        is_default:
+          type: string
+          readOnly: true
+          description: Indicates if the template must be selected by default. The web-frontend automatically
+            selects the first `is_default` template that it can find.
+        open_application:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description: The application ID that must be opened when the template is previewed. If null,
+            then the first will automatically be chosen.
+      required:
+      - icon
+      - id
+      - is_default
+      - name
+      - slug
+      - workspace_id
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 165
+        generative_ai_models_enabled:
+          type: string
+          readOnly: true
+      required:
+      - generative_ai_models_enabled
+      - id
+      - name
+    DatabaseApplication:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 160
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        type:
+          type: string
+          readOnly: true
+        workspace:
+          allOf:
+          - $ref: '#/components/schemas/Workspace'
+          description: The workspace that the application belongs to.
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/Table'
+          readOnly: true
+          description: This field is specific to the `database` application and contains an array of tables
+            that are in the database.
+      required:
+      - created_on
+      - id
+      - name
+      - order
+      - tables
+      - type
+      - workspace
+    BuilderApplication:
+      type: object
+      description: 'The builder serializer.
+
+
+        👉 Mind to update the
+
+        baserow.contrib.builder.api.domains.serializer.PublicBuilderSerializer
+
+        when you update this one.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 160
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        type:
+          type: string
+          readOnly: true
+        workspace:
+          allOf:
+          - $ref: '#/components/schemas/Workspace'
+          description: The workspace that the application belongs to.
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+        pages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Page'
+          readOnly: true
+          description: This field is specific to the `builder` application and contains an array of pages
+            that are in the builder.
+        theme:
+          allOf:
+          - $ref: '#/components/schemas/ColorTypographyButtonImagePageInputTableLinklink_active_text_decoration'
+          readOnly: true
+          description: This field is specific to the `builder` application and contains the theme settings.
+        favicon_file:
+          allOf:
+          - $ref: '#/components/schemas/UserFile'
+          nullable: true
+          description: The favicon image file
+        login_page_id:
+          type: integer
+          nullable: true
+      required:
+      - created_on
+      - id
+      - name
+      - order
+      - pages
+      - theme
+      - type
+      - workspace
+    DashboardApplication:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 160
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        type:
+          type: string
+          readOnly: true
+        workspace:
+          allOf:
+          - $ref: '#/components/schemas/Workspace'
+          description: The workspace that the application belongs to.
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+        description:
+          type: string
+      required:
+      - created_on
+      - id
+      - name
+      - order
+      - type
+      - workspace
+    Table:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Lowest first.
+        database_id:
+          type: integer
+          readOnly: true
+        data_sync:
+          $ref: '#/components/schemas/DataSync'
+      required:
+      - data_sync
+      - database_id
+      - id
+      - name
+      - order
+    UserFile:
+      type: object
+      properties:
+        size:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        mime_type:
+          type: string
+          maxLength: 127
+        is_image:
+          type: boolean
+        image_width:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        image_height:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+        url:
+          type: string
+          format: uri
+          readOnly: true
+        thumbnails:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        original_name:
+          type: string
+          maxLength: 255
+      required:
+      - name
+      - original_name
+      - size
+      - thumbnails
+      - uploaded_at
+      - url
+    Page:
+      type: object
+      description: '👉 Mind to update the
+
+        baserow.contrib.builder.api.domains.serializer.PublicPageSerializer
+
+        when you update this one.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        path:
+          type: string
+          maxLength: 255
+        path_params:
+          type: array
+          items:
+            $ref: '#/components/schemas/PathParam'
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Lowest first.
+        builder_id:
+          type: integer
+          readOnly: true
+        shared:
+          type: boolean
+          readOnly: true
+        visibility:
+          allOf:
+          - $ref: '#/components/schemas/VisibilityC5fEnum'
+          readOnly: true
+          description: 'Controls the page''s visibility. When set to ''logged-in'', the builder''s login_page
+            must also be set.
+
+
+            * `all` - All
+
+            * `logged-in` - Logged In'
+        role_type:
+          allOf:
+          - $ref: '#/components/schemas/RoleTypeEnum'
+          readOnly: true
+          description: 'Role type is used in conjunction with roles to control access to this page.
+
+
+            * `allow_all` - Allow All
+
+            * `allow_all_except` - Allow All Except
+
+            * `disallow_all_except` - Disallow All Except'
+        roles:
+          readOnly: true
+          description: List of user roles that are associated with this page. Used in conjunction with
+            role_type.
+        query_params:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryParam'
+      required:
+      - builder_id
+      - id
+      - name
+      - order
+      - path
+      - role_type
+      - roles
+      - shared
+      - visibility
+    ColorTypographyButtonImagePageInputTableLinklink_active_text_decoration:
+      type: object
+      properties:
+        primary_color:
+          type: string
+          maxLength: 255
+        secondary_color:
+          type: string
+          maxLength: 255
+        border_color:
+          type: string
+          maxLength: 255
+        main_success_color:
+          type: string
+          maxLength: 255
+        main_warning_color:
+          type: string
+          maxLength: 255
+        main_error_color:
+          type: string
+          maxLength: 255
+        custom_colors: {}
+        heading_1_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        heading_2_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        heading_3_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        heading_4_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        heading_5_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        heading_6_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        body_font_family:
+          type: string
+          maxLength: 250
+        body_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        body_font_weight:
+          $ref: '#/components/schemas/BodyFontWeightEnum'
+        body_text_color:
+          type: string
+          maxLength: 255
+        body_text_alignment:
+          $ref: '#/components/schemas/BodyTextAlignmentEnum'
+        heading_1_font_family:
+          type: string
+          maxLength: 250
+        heading_1_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_1_font_weight:
+          $ref: '#/components/schemas/Heading1FontWeightEnum'
+        heading_1_text_color:
+          type: string
+          maxLength: 255
+        heading_1_text_alignment:
+          $ref: '#/components/schemas/Heading1TextAlignmentEnum'
+        heading_2_font_family:
+          type: string
+          maxLength: 250
+        heading_2_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_2_font_weight:
+          $ref: '#/components/schemas/Heading2FontWeightEnum'
+        heading_2_text_color:
+          type: string
+          maxLength: 255
+        heading_2_text_alignment:
+          $ref: '#/components/schemas/Heading2TextAlignmentEnum'
+        heading_3_font_family:
+          type: string
+          maxLength: 250
+        heading_3_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_3_font_weight:
+          $ref: '#/components/schemas/Heading3FontWeightEnum'
+        heading_3_text_color:
+          type: string
+          maxLength: 255
+        heading_3_text_alignment:
+          $ref: '#/components/schemas/Heading3TextAlignmentEnum'
+        heading_4_font_family:
+          type: string
+          maxLength: 250
+        heading_4_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_4_font_weight:
+          $ref: '#/components/schemas/Heading4FontWeightEnum'
+        heading_4_text_color:
+          type: string
+          maxLength: 255
+        heading_4_text_alignment:
+          $ref: '#/components/schemas/Heading4TextAlignmentEnum'
+        heading_5_font_family:
+          type: string
+          maxLength: 250
+        heading_5_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_5_font_weight:
+          $ref: '#/components/schemas/Heading5FontWeightEnum'
+        heading_5_text_color:
+          type: string
+          maxLength: 255
+        heading_5_text_alignment:
+          $ref: '#/components/schemas/Heading5TextAlignmentEnum'
+        heading_6_font_family:
+          type: string
+          maxLength: 250
+        heading_6_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_6_font_weight:
+          $ref: '#/components/schemas/Heading6FontWeightEnum'
+        heading_6_text_color:
+          type: string
+          maxLength: 255
+        heading_6_text_alignment:
+          $ref: '#/components/schemas/Heading6TextAlignmentEnum'
+        button_font_family:
+          type: string
+          maxLength: 250
+        button_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        button_font_weight:
+          $ref: '#/components/schemas/ButtonFontWeightEnum'
+        button_alignment:
+          $ref: '#/components/schemas/ButtonAlignmentEnum'
+        button_text_alignment:
+          $ref: '#/components/schemas/ButtonTextAlignmentEnum'
+        button_width:
+          $ref: '#/components/schemas/ButtonWidthEnum'
+        button_background_color:
+          type: string
+          description: The background color of buttons
+          maxLength: 255
+        button_text_color:
+          type: string
+          description: The text color of buttons
+          maxLength: 255
+        button_border_color:
+          type: string
+          description: The border color of buttons
+          maxLength: 255
+        button_border_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Button border size
+        button_border_radius:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Button border radius
+        button_vertical_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Button vertical padding
+        button_horizontal_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Button horizontal padding
+        button_hover_background_color:
+          type: string
+          description: The background color of buttons when hovered
+          maxLength: 255
+        button_hover_text_color:
+          type: string
+          description: The text color of buttons when hovered
+          maxLength: 255
+        button_hover_border_color:
+          type: string
+          description: The border color of buttons when hovered
+          maxLength: 255
+        button_active_background_color:
+          type: string
+          description: The background color of buttons when active
+          maxLength: 255
+        button_active_text_color:
+          type: string
+          description: The text color of buttons when active
+          maxLength: 255
+        button_active_border_color:
+          type: string
+          description: The border color of buttons when active
+          maxLength: 255
+        image_max_height:
+          type: integer
+          description: The image max height
+        image_alignment:
+          $ref: '#/components/schemas/ImageAlignmentEnum'
+        image_max_width:
+          type: integer
+          maximum: 100
+          minimum: 0
+          description: The max-width for this image element.
+        image_border_radius:
+          type: integer
+          maximum: 100
+          minimum: 0
+          description: The border radius for this image element.
+        image_constraint:
+          allOf:
+          - $ref: '#/components/schemas/ImageConstraintEnum'
+          description: 'The image constraint to apply to this image
+
+
+            * `cover` - Cover
+
+            * `contain` - Contain
+
+            * `full-width` - Full Width'
+        page_background_file:
+          allOf:
+          - $ref: '#/components/schemas/UserFile'
+          nullable: true
+          description: The image file
+        page_background_color:
+          type: string
+          description: The background color of the page
+          maxLength: 255
+        page_background_mode:
+          allOf:
+          - $ref: '#/components/schemas/PageBackgroundModeEnum'
+          description: 'The mode of the background image
+
+
+            * `tile` - Tile
+
+            * `fill` - Fill
+
+            * `fit` - Fit'
+        label_font_family:
+          type: string
+          description: The font family of the label
+          maxLength: 250
+        label_text_color:
+          type: string
+          description: The text color of the label
+          maxLength: 255
+        label_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: The font size of the label
+        label_font_weight:
+          $ref: '#/components/schemas/LabelFontWeightEnum'
+        input_font_family:
+          type: string
+          description: The font family of the input
+          maxLength: 250
+        input_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        input_font_weight:
+          $ref: '#/components/schemas/InputFontWeightEnum'
+        input_text_color:
+          type: string
+          description: The text color of the input
+          maxLength: 255
+        input_background_color:
+          type: string
+          description: The background color of the input
+          maxLength: 255
+        input_border_color:
+          type: string
+          description: The color of the input border
+          maxLength: 255
+        input_border_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Input border size
+        input_border_radius:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Input border radius
+        input_vertical_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Input vertical padding
+        input_horizontal_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Input horizontal padding
+        table_border_color:
+          type: string
+          description: The color of the table border
+          maxLength: 255
+        table_border_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table border size
+        table_border_radius:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table border radius
+        table_header_background_color:
+          type: string
+          description: The background color of the table header cells
+          maxLength: 255
+        table_header_text_color:
+          type: string
+          description: The text color of the table header cells
+          maxLength: 255
+        table_header_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: The font size of the header cells
+        table_header_font_weight:
+          $ref: '#/components/schemas/TableHeaderFontWeightEnum'
+        table_header_font_family:
+          type: string
+          description: The font family of the table header cells
+          maxLength: 250
+        table_header_text_alignment:
+          $ref: '#/components/schemas/TableHeaderTextAlignmentEnum'
+        table_cell_background_color:
+          type: string
+          description: The background color of the table cells
+          maxLength: 255
+        table_cell_alternate_background_color:
+          type: string
+          description: The alternate background color of the table cells
+          maxLength: 255
+        table_cell_alignment:
+          $ref: '#/components/schemas/TableCellAlignmentEnum'
+        table_cell_vertical_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table cell vertical padding
+        table_cell_horizontal_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table cell horizontal padding
+        table_vertical_separator_color:
+          type: string
+          description: The color of the table vertical separator
+          maxLength: 255
+        table_vertical_separator_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table vertical separator size
+        table_horizontal_separator_color:
+          type: string
+          description: The color of the table horizontal separator
+          maxLength: 255
+        table_horizontal_separator_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table horizontal separator size
+        link_default_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Default text decoration: [underline, stroke, uppercase, italic]'
+        link_hover_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Hover text decoration: [underline, stroke, uppercase, italic]'
+        link_active_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Active text decoration: [underline, stroke, uppercase, italic]'
+        link_font_family:
+          type: string
+          maxLength: 250
+        link_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        link_font_weight:
+          $ref: '#/components/schemas/LinkFontWeightEnum'
+        link_text_alignment:
+          $ref: '#/components/schemas/LinkTextAlignmentEnum'
+        link_text_color:
+          type: string
+          description: The text color of links
+          maxLength: 255
+        link_hover_text_color:
+          type: string
+          description: The hover color of links when hovered
+          maxLength: 255
+        link_active_text_color:
+          type: string
+          description: The hover color of links when active
+          maxLength: 255
+    DataSync:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+        synced_properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSyncSyncedProperty'
+        last_sync:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when the table was last synced.
+        last_error:
+          type: string
+          nullable: true
+      required:
+      - id
+      - synced_properties
+      - type
+    RoleTypeEnum:
+      enum:
+      - allow_all
+      - allow_all_except
+      - disallow_all_except
+      type: string
+      description: '* `allow_all` - Allow All
+
+        * `allow_all_except` - Allow All Except
+
+        * `disallow_all_except` - Disallow All Except'
+    QueryParam:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the parameter.
+          maxLength: 255
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeD08Enum'
+          description: 'The type of the parameter.
+
+
+            * `text` - text
+
+            * `numeric` - numeric'
+      required:
+      - name
+      - type
+    PathParam:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the parameter.
+          maxLength: 255
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeD08Enum'
+          description: 'The type of the parameter.
+
+
+            * `text` - text
+
+            * `numeric` - numeric'
+      required:
+      - name
+      - type
+    VisibilityC5fEnum:
+      enum:
+      - all
+      - logged-in
+      type: string
+      description: '* `all` - All
+
+        * `logged-in` - Logged In'
+    ButtonWidthEnum:
+      enum:
+      - auto
+      - full
+      type: string
+      description: '* `auto` - Auto
+
+        * `full` - Full'
+    InputFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    ImageConstraintEnum:
+      enum:
+      - cover
+      - contain
+      - full-width
+      type: string
+      description: '* `cover` - Cover
+
+        * `contain` - Contain
+
+        * `full-width` - Full Width'
+    Heading4TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    ButtonAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    ImageAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    BodyFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    Heading4FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    LabelFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    Heading3FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    Heading2FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    PageBackgroundModeEnum:
+      enum:
+      - tile
+      - fill
+      - fit
+      type: string
+      description: '* `tile` - Tile
+
+        * `fill` - Fill
+
+        * `fit` - Fit'
+    Heading1FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    ButtonFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    Heading2TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    ButtonTextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    TableHeaderFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    BodyTextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    TableCellAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    TableHeaderTextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    LinkTextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    Heading6TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    Heading5TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    Heading6FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    Heading3TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    Heading1TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    Heading5FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    LinkFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    DataSyncSyncedProperty:
+      type: object
+      properties:
+        field_id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          description: The matching `key` of the `DataSyncProperty`.
+          maxLength: 255
+        unique_primary:
+          type: boolean
+          description: Indicates whether the data sync property is used for unique identification when
+            syncing.
+      required:
+      - field_id
+      - key
+    TypeD08Enum:
+      enum:
+      - text
+      - numeric
+      type: string
+      description: '* `text` - text
+
+        * `numeric` - numeric'
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags:
+- name: Templates

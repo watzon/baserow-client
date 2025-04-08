@@ -1,0 +1,462 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/integration/{integration_id}/:
+    patch:
+      operationId: update_application_integration
+      description: Updates an existing integration.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: path
+        name: integration_id
+        schema:
+          type: integer
+        description: The id of the integration
+        required: true
+      tags:
+      - Integrations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedIntegrationUpdateIntegration'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedIntegrationUpdateIntegration'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedIntegrationUpdateIntegration'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntegrationIntegration'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_INTEGRATION_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    delete:
+      operationId: delete_application_integration
+      description: Deletes the integration related by the given id.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: path
+        name: integration_id
+        schema:
+          type: integer
+        description: The id of the integration
+        required: true
+      tags:
+      - Integrations
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_INTEGRATION_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/integration/{integration_id}/move/:
+    patch:
+      operationId: move_application_integration
+      description: Moves the integration in the application before another integration or at the end of
+        the application if no before integration is given. The integrations must belong to the same application.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: path
+        name: integration_id
+        schema:
+          type: integer
+        description: The id of the integration to move
+        required: true
+      tags:
+      - Integrations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMoveIntegration'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMoveIntegration'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMoveIntegration'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntegrationIntegration'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                    - ERROR_INTEGRATION_NOT_IN_SAME_APPLICATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_INTEGRATION_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  schemas:
+    PatchedMoveIntegration:
+      type: object
+      properties:
+        before_id:
+          type: integer
+          nullable: true
+          description: If provided, the integration is moved before the integration with this Id. Otherwise
+            the integration is placed at the end of the page.
+    PatchedIntegrationUpdateIntegration:
+      anyOf:
+      - $ref: '#/components/schemas/LocalBaserowIntegrationUpdateIntegration'
+    IntegrationIntegration:
+      oneOf:
+      - $ref: '#/components/schemas/LocalBaserowIntegrationIntegration'
+      discriminator:
+        propertyName: type
+        mapping:
+          local_baserow: '#/components/schemas/LocalBaserowIntegrationIntegration'
+    LocalBaserowIntegrationUpdateIntegration:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        context_data:
+          allOf:
+          - $ref: '#/components/schemas/LocalBaserowContextData'
+          readOnly: true
+        authorized_user:
+          allOf:
+          - $ref: '#/components/schemas/SubjectUser'
+          readOnly: true
+      required:
+      - authorized_user
+      - context_data
+    LocalBaserowIntegrationIntegration:
+      type: object
+      description: Basic integration serializer mostly for returned values.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        application_id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the integration.
+        name:
+          type: string
+          readOnly: true
+        order:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,20}(?:\.\d{0,20})?$
+          readOnly: true
+          description: Lowest first.
+        context_data:
+          allOf:
+          - $ref: '#/components/schemas/LocalBaserowContextData'
+          readOnly: true
+        authorized_user:
+          allOf:
+          - $ref: '#/components/schemas/SubjectUser'
+          readOnly: true
+      required:
+      - application_id
+      - authorized_user
+      - context_data
+      - id
+      - name
+      - order
+      - type
+    LocalBaserowContextData:
+      type: object
+      properties:
+        databases:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalBaserowDatabaseApplication'
+      required:
+      - databases
+    SubjectUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+        first_name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Email address
+      required:
+      - email
+      - first_name
+      - id
+      - username
+    LocalBaserowDatabaseApplication:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 160
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        type:
+          type: string
+          readOnly: true
+        workspace:
+          allOf:
+          - $ref: '#/components/schemas/Workspace'
+          description: The workspace that the application belongs to.
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalBaserowTable'
+          description: This field is specific to the `database` application and contains an array of tables
+            that are in the database.
+        views:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalBaserowView'
+          description: This field is specific to the `database` application and contains an array of views
+            that are in the tables.
+      required:
+      - created_on
+      - id
+      - name
+      - order
+      - tables
+      - type
+      - views
+      - workspace
+    LocalBaserowView:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        table_id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+      - table_id
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 165
+        generative_ai_models_enabled:
+          type: string
+          readOnly: true
+      required:
+      - generative_ai_models_enabled
+      - id
+      - name
+    LocalBaserowTable:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        database_id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        is_data_sync:
+          type: boolean
+          description: Whether this table is a data synced table or not.
+      required:
+      - database_id
+      - id
+      - is_data_sync
+      - name
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags:
+- name: Integrations

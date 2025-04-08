@@ -1,0 +1,769 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/licenses/:
+    get:
+      operationId: admin_licenses
+      description: Lists all the valid licenses that are registered to this instance. A premium license
+        can be used to unlock the premium features for a fixed amount of users. An enterprise license
+        can similarly be used to unlock enterprise features. More information about self hosted licenses
+        can be found on our pricing page https://baserow.io/pricing.
+      tags:
+      - Admin
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/License'
+          description: ''
+    post:
+      operationId: admin_register_license
+      description: Registers a new license. After registering you can assign users to the license that
+        will be able to use the license's features while the license is active. If an existing license
+        with the same `license_id` already exists and the provided license has been issued later than
+        that one, the existing one will be upgraded.
+      tags:
+      - Admin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterLicense'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterLicense'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterLicense'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_INVALID_LICENSE
+                    - ERROR_UNSUPPORTED_LICENSE
+                    - ERROR_PREMIUM_LICENSE_INSTANCE_ID_MISMATCH
+                    - ERROR_LICENSE_HAS_EXPIRED
+                    - ERROR_LICENSE_ALREADY_EXISTS
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/licenses/{id}/:
+    get:
+      operationId: admin_get_license
+      description: Responds with detailed information about the license related to the provided parameter.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: The internal identifier of the license.
+        required: true
+      tags:
+      - Admin
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseWithUsers'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_LICENSE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    delete:
+      operationId: admin_remove_license
+      description: Removes the existing license related to the provided parameter. If the license is active,
+        then all the users that are using the license will lose access to the features granted by that
+        license.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: The internal identifier of the license, this is `id` and not `license_id`.
+        required: true
+      tags:
+      - Admin
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_LICENSE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/licenses/{id}/{user_id}/:
+    post:
+      operationId: admin_add_user_to_license
+      description: Adds the user related to the provided parameter and to the license related to the parameter.
+        This only happens if there are enough seats left on the license and if the user is not already
+        on the license.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: The internal identifier of the license, this is `id` and not `license_id`.
+        required: true
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        description: The ID of the user that must be added to the license.
+        required: true
+      tags:
+      - Admin
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_ALREADY_ON_LICENSE
+                    - ERROR_NO_SEATS_LEFT_IN_LICENSE
+                    - ERROR_CANT_MANUALLY_CHANGE_SEATS
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_LICENSE_DOES_NOT_EXIST
+                    - ERROR_USER_NOT_FOUND
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    delete:
+      operationId: admin_remove_user_from_license
+      description: Removes the user related to the provided parameter and to the license related to the
+        parameter. This only happens if the user is on the license, otherwise nothing will happen.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: The internal identifier of the license, this is `id` and not `license_id`.
+        required: true
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        description: The ID of the user that must be removed from the license.
+        required: true
+      tags:
+      - Admin
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_CANT_MANUALLY_CHANGE_SEATS
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_LICENSE_DOES_NOT_EXIST
+                    - ERROR_USER_NOT_FOUND
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/licenses/{id}/check/:
+    get:
+      operationId: admin_license_check
+      description: This endpoint checks with the authority if the license needs to be updated. It also
+        checks if the license is operating within its limits and might take action on that. It could also
+        happen that the license has been deleted because there is an instance id mismatch or because it's
+        invalid. In that case a `204` status code is returned.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: The internal identifier of the license, this is `id` and not `license_id`.
+        required: true
+      tags:
+      - Admin
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseWithUsers'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_LICENSE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/licenses/{id}/fill-seats/:
+    post:
+      operationId: admin_fill_remaining_seats_of_license
+      description: Fills the remaining empty seats of the license with the first users that are found.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: The internal identifier of the license, this is `id` and not `license_id`.
+        required: true
+      tags:
+      - Admin
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LicenseUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_CANT_MANUALLY_CHANGE_SEATS
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_LICENSE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/licenses/{id}/lookup-users/:
+    get:
+      operationId: admin_license_lookup_users
+      description: This endpoint can be used to lookup users that can be added to a  license. Users that
+        are already in the license are not returned here. Optionally a `search` query parameter can be
+        provided to filter the results.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: The internal identifier of the license, this is `id` and not `license_id`.
+        required: true
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Defines which page of users should be returned.
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: If provided, only users where the name or email contains the value are returned.
+      - in: query
+        name: size
+        schema:
+          type: integer
+        description: Defines how many users should be returned per page.
+      tags:
+      - Admin
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginationSerializerLicenseUserLookup'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_LICENSE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/licenses/{id}/remove-all-users/:
+    post:
+      operationId: admin_remove_all_users_from_license
+      description: Removes all the users that are on the license. This will empty all the seats.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: The internal identifier of the license, this is `id` and not `license_id`.
+        required: true
+      tags:
+      - Admin
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_CANT_MANUALLY_CHANGE_SEATS
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_LICENSE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  schemas:
+    RegisterLicense:
+      type: object
+      properties:
+        license:
+          type: string
+          description: The license that you want to register.
+      required:
+      - license
+    LicenseUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+      required:
+      - id
+    PaginationSerializerLicenseUserLookup:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: The total amount of results.
+        next:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to the next page.
+        previous:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to the previous page.
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LicenseUserLookup'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    License:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        license_id:
+          type: string
+          description: Unique identifier of the license.
+        is_active:
+          type: boolean
+          description: Indicates if the backend deems the license valid.
+        last_check:
+          type: string
+          format: date-time
+          nullable: true
+        valid_from:
+          type: string
+          format: date-time
+          description: From which timestamp the license becomes active.
+        valid_through:
+          type: string
+          format: date-time
+          description: Until which timestamp the license is active.
+        free_users_count:
+          type: integer
+          readOnly: true
+          description: The amount of free users that are currently using the license.
+        seats_taken:
+          type: integer
+          readOnly: true
+          description: The amount of users that are currently using the license.
+        seats:
+          type: integer
+          description: The maximum amount of users that can use the license.
+        application_users_taken:
+          type: integer
+          readOnly: true
+          description: The amount of application builder users used so far in this license.
+        application_users:
+          type: integer
+          description: The amount of application builder users permitted in this license.
+        product_code:
+          type: string
+          description: The product code that indicates what the license unlocks.
+        issued_on:
+          type: string
+          format: date-time
+          description: The date when the license was issued. It could be that a new license is issued
+            with the same `license_id` because it was updated. In that case, the one that has been issued
+            last should be used.
+        issued_to_email:
+          type: string
+          format: email
+          description: Indicates to which email address the license has been issued.
+        issued_to_name:
+          type: string
+          description: Indicates to whom the license has been issued.
+      required:
+      - application_users
+      - application_users_taken
+      - free_users_count
+      - id
+      - is_active
+      - issued_on
+      - issued_to_email
+      - issued_to_name
+      - license_id
+      - product_code
+      - seats
+      - seats_taken
+      - valid_from
+      - valid_through
+    LicenseWithUsers:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        license_id:
+          type: string
+          description: Unique identifier of the license.
+        is_active:
+          type: boolean
+          description: Indicates if the backend deems the license valid.
+        last_check:
+          type: string
+          format: date-time
+          nullable: true
+        valid_from:
+          type: string
+          format: date-time
+          description: From which timestamp the license becomes active.
+        valid_through:
+          type: string
+          format: date-time
+          description: Until which timestamp the license is active.
+        free_users_count:
+          type: integer
+          readOnly: true
+          description: The amount of free users that are currently using the license.
+        seats_taken:
+          type: integer
+          readOnly: true
+          description: The amount of users that are currently using the license.
+        seats:
+          type: integer
+          description: The maximum amount of users that can use the license.
+        application_users_taken:
+          type: integer
+          readOnly: true
+          description: The amount of application builder users used so far in this license.
+        application_users:
+          type: integer
+          description: The amount of application builder users permitted in this license.
+        product_code:
+          type: string
+          description: The product code that indicates what the license unlocks.
+        issued_on:
+          type: string
+          format: date-time
+          description: The date when the license was issued. It could be that a new license is issued
+            with the same `license_id` because it was updated. In that case, the one that has been issued
+            last should be used.
+        issued_to_email:
+          type: string
+          format: email
+          description: Indicates to which email address the license has been issued.
+        issued_to_name:
+          type: string
+          description: Indicates to whom the license has been issued.
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/LicenseUser'
+          readOnly: true
+      required:
+      - application_users
+      - application_users_taken
+      - free_users_count
+      - id
+      - is_active
+      - issued_on
+      - issued_to_email
+      - issued_to_name
+      - license_id
+      - product_code
+      - seats
+      - seats_taken
+      - users
+      - valid_from
+      - valid_through
+    LicenseUserLookup:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        value:
+          type: string
+          description: The name and the email address of the user.
+          readOnly: true
+      required:
+      - id
+      - value
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags:
+- name: Admin

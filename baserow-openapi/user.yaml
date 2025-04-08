@@ -1,0 +1,1126 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/user/:
+    post:
+      operationId: create_user
+      description: Creates a new user based on the provided values. If desired an authentication JWT can
+        be generated right away. After creating an account the initial workspace containing a database
+        is created.
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Register'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Register'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    description: An object containing information related to the user.
+                    properties:
+                      first_name:
+                        type: string
+                        description: The first name of related user.
+                      username:
+                        type: string
+                        format: email
+                        description: The username of the related user. This is always an email address.
+                      language:
+                        type: string
+                        description: 'An ISO 639 language code (with optional variant) selected by the
+                          user. Ex: en-GB.'
+                  token:
+                    type: string
+                    deprecated: true
+                    description: Deprecated. Use the `access_token` instead.
+                  access_token:
+                    type: string
+                    description: '''access_token'' can be used to authorize for other endpoints that require
+                      authorization. This token will be valid for 10 minutes.'
+                  refresh_token:
+                    type: string
+                    description: '''refresh_token'' can be used to get a new valid ''access_token''. This
+                      token will be valid for 168 hours.'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_ALREADY_EXISTS
+                    - ERROR_GROUP_INVITATION_DOES_NOT_EXIST
+                    - ERROR_REQUEST_BODY_VALIDATION
+                    - BAD_TOKEN_SIGNATURE
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_GROUP_INVITATION_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user/account/:
+    patch:
+      operationId: update_account
+      description: Updates the account information of the authenticated user.
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAccount'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAccount'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAccount'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user/change-password/:
+    post:
+      operationId: change_password
+      description: Changes the password of an authenticated user, but only if the old password matches.
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordBodyValidation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordBodyValidation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordBodyValidation'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_INVALID_OLD_PASSWORD
+                    - ERROR_REQUEST_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user/dashboard/:
+    get:
+      operationId: dashboard
+      description: Lists all the relevant user information that for example could be shown on a dashboard.
+        It will contain all the pending workspace invitations for that user.
+      tags:
+      - User
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+          description: ''
+  /api/user/redo/:
+    patch:
+      operationId: redo
+      description: Redoes the latest redoable action performed by the user making the request. a ClientSessionId
+        header must be provided and only actions which were performed the same user with the same ClientSessionId
+        value set on the api request that performed the action will be redone.Additionally the ClientSessionId
+        header must be between 1 and 256 characters long and must only contain alphanumeric or the - characters.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: The particular client session to redo actions for. The actions must have been performed
+          with this same header set with the same value for them to be redoable by this endpoint.
+        required: true
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUndoRedoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUndoRedoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUndoRedoRequest'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UndoRedoResponse'
+          description: ''
+  /api/user/reset-password/:
+    post:
+      operationId: reset_password
+      description: Changes the password of a user if the reset token is valid. The **send_password_reset_email**
+        endpoint sends an email to the user containing the token. That token can be used to change the
+        password here without providing the old password.
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordBodyValidation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordBodyValidation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordBodyValidation'
+        required: true
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - BAD_TOKEN_SIGNATURE
+                    - EXPIRED_TOKEN_SIGNATURE
+                    - ERROR_USER_NOT_FOUND
+                    - ERROR_REQUEST_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user/schedule-account-deletion/:
+    post:
+      operationId: schedule_account_deletion
+      description: Schedules the account deletion of the authenticated user. The user will be permanently
+        deleted after the grace delay defined by the instance administrator.
+      tags:
+      - User
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user/send-reset-password-email/:
+    post:
+      operationId: send_password_reset_email
+      description: Sends an email containing the password reset link to the email address of the user.
+        This will only be done if a user is found with the given email address. The endpoint will not
+        fail if the email address is not found. The link is going to the valid for 48 hours.
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendResetPasswordEmailBodyValidation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SendResetPasswordEmailBodyValidation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendResetPasswordEmailBodyValidation'
+        required: true
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_REQUEST_BODY_VALIDATION
+                    - ERROR_HOSTNAME_IS_NOT_ALLOWED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user/send-verify-email/:
+    post:
+      operationId: send_verify_email
+      description: Sends an email to the user with an email verification link if the user's email is not
+        verified yet.
+      tags:
+      - User
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/user/token-auth/:
+    post:
+      operationId: token_auth
+      description: Authenticates an existing user based on their email and their password. If successful,
+        an access token and a refresh token will be returned.
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairWithUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairWithUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairWithUser'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    description: An object containing information related to the user.
+                    properties:
+                      first_name:
+                        type: string
+                        description: The first name of related user.
+                      username:
+                        type: string
+                        format: email
+                        description: The username of the related user. This is always an email address.
+                      language:
+                        type: string
+                        description: 'An ISO 639 language code (with optional variant) selected by the
+                          user. Ex: en-GB.'
+                  token:
+                    type: string
+                    deprecated: true
+                    description: Deprecated. Use the `access_token` instead.
+                  access_token:
+                    type: string
+                    description: '''access_token'' can be used to authorize for other endpoints that require
+                      authorization. This token will be valid for 10 minutes.'
+                  refresh_token:
+                    type: string
+                    description: '''refresh_token'' can be used to get a new valid ''access_token''. This
+                      token will be valid for 168 hours.'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_INVALID_CREDENTIALS
+                    - ERROR_DEACTIVATED_USER
+                    - ERROR_AUTH_PROVIDER_DISABLED
+                    - ERROR_EMAIL_VERIFICATION_REQUIRED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user/token-blacklist/:
+    post:
+      operationId: token_blacklist
+      description: Blacklists the provided token. This can be used the sign the user off.
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenBlacklist'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenBlacklist'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenBlacklist'
+        required: true
+      responses:
+        '204':
+          description: No response body
+        '401':
+          content:
+            application/json:
+              schema:
+                description: The JWT refresh token is invalid or expired.
+          description: ''
+  /api/user/token-refresh/:
+    post:
+      operationId: token_refresh
+      description: Generate a new access_token that can be used to continue operating on Baserow starting
+        from a valid refresh token.
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshWithUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshWithUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshWithUser'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    description: An object containing information related to the user.
+                    properties:
+                      first_name:
+                        type: string
+                        description: The first name of related user.
+                      username:
+                        type: string
+                        format: email
+                        description: The username of the related user. This is always an email address.
+                      language:
+                        type: string
+                        description: 'An ISO 639 language code (with optional variant) selected by the
+                          user. Ex: en-GB.'
+                  token:
+                    type: string
+                    deprecated: true
+                    description: Deprecated. Use the `access_token` instead.
+                  access_token:
+                    type: string
+                    description: '''access_token'' can be used to authorize for other endpoints that require
+                      authorization. This token will be valid for 10 minutes.'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_INVALID_REFRESH_TOKEN
+                    - ERROR_EMAIL_VERIFICATION_REQUIRED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user/token-verify/:
+    post:
+      operationId: token_verify
+      description: Verifies if the refresh token is valid and can be used to generate a new access_token.
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyWithUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyWithUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyWithUser'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    description: An object containing information related to the user.
+                    properties:
+                      first_name:
+                        type: string
+                        description: The first name of related user.
+                      username:
+                        type: string
+                        format: email
+                        description: The username of the related user. This is always an email address.
+                      language:
+                        type: string
+                        description: 'An ISO 639 language code (with optional variant) selected by the
+                          user. Ex: en-GB.'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_INVALID_REFRESH_TOKEN
+                    - ERROR_EMAIL_VERIFICATION_REQUIRED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user/undo/:
+    patch:
+      operationId: undo
+      description: undoes the latest undoable action performed by the user making the request. a ClientSessionId
+        header must be provided and only actions which were performed the same user with the same ClientSessionId
+        value set on the api request that performed the action will be undone.Additionally the ClientSessionId
+        header must be between 1 and 256 characters long and must only contain alphanumeric or the - characters.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: The particular client session to undo actions for. The actions must have been performed
+          with this same header set with the same value for them to be undoable by this endpoint.
+        required: true
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUndoRedoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUndoRedoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUndoRedoRequest'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UndoRedoResponse'
+          description: ''
+  /api/user/verify-email/:
+    post:
+      operationId: verify_email
+      description: Passing the correct verification token will confirm that the user's email address belongs
+        to the user. This endpoint also optionally returns user information, access token and the refresh
+        token for automatically signing user in the system if the request is performed by unauthenticated
+        user.
+      tags:
+      - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailAddress'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailAddress'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailAddress'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    description: An object containing information related to the user.
+                    properties:
+                      first_name:
+                        type: string
+                        description: The first name of related user.
+                      username:
+                        type: string
+                        format: email
+                        description: The username of the related user. This is always an email address.
+                      language:
+                        type: string
+                        description: 'An ISO 639 language code (with optional variant) selected by the
+                          user. Ex: en-GB.'
+                  token:
+                    type: string
+                    deprecated: true
+                    description: Deprecated. Use the `access_token` instead.
+                  access_token:
+                    type: string
+                    description: '''access_token'' can be used to authorize for other endpoints that require
+                      authorization. This token will be valid for 10 minutes.'
+                  refresh_token:
+                    type: string
+                    description: '''refresh_token'' can be used to get a new valid ''access_token''. This
+                      token will be valid for 168 hours.'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_INVALID_VERIFICATION_TOKEN
+                    - ERROR_EMAIL_ALREADY_VERIFIED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_DEACTIVATED_USER
+                    - ERROR_AUTH_PROVIDER_DISABLED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  schemas:
+    ChangePasswordBodyValidation:
+      type: object
+      properties:
+        old_password:
+          type: string
+        new_password:
+          type: string
+      required:
+      - new_password
+      - old_password
+    VerifyEmailAddress:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+      - token
+    UndoRedoResponse:
+      type: object
+      properties:
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/UndoRedoAction'
+        result_code:
+          type: string
+          description: Indicates the result of the undo/redo operation. Will be 'SUCCESS' on success,
+            'NOTHING_TO_DO' when there is no action to undo/redo and 'SKIPPED_DUE_TO_ERROR' when the undo/redo
+            failed due to a conflict or error and was skipped over.
+      required:
+      - actions
+      - result_code
+    TokenBlacklist:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - refresh
+    TokenRefreshWithUser:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh_token:
+          type: string
+        token:
+          type: string
+          description: Deprecated. Use `refresh_token` instead.
+          deprecated: true
+      required:
+      - access
+    SendResetPasswordEmailBodyValidation:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: The email address of the user that has requested a password reset.
+        base_url:
+          type: string
+          format: uri
+          description: The base URL where the user can reset his password. The reset token is going to
+            be appended to the base_url (base_url '/token').
+      required:
+      - base_url
+      - email
+    Register:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 150
+          minLength: 2
+        email:
+          type: string
+          format: email
+          description: The email address is also going to be the username.
+        password:
+          type: string
+        language:
+          type: string
+          default: en
+          description: 'An ISO 639 language code (with optional variant) selected by the user. Ex: en-GB.'
+          maxLength: 10
+          minLength: 2
+        authenticate:
+          type: boolean
+          default: false
+          description: Indicates whether an authentication JWT should be generated and be included in
+            the response.
+        workspace_invitation_token:
+          type: string
+          description: If provided and valid, the user accepts the workspace invitation and will have
+            access to the workspace after signing up.
+        template_id:
+          type: integer
+          description: The id of the template that must be installed after creating the account. This
+            only works if the `workspace_invitation_token` param is not provided.
+      required:
+      - email
+      - name
+      - password
+    ResetPasswordBodyValidation:
+      type: object
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+      required:
+      - password
+      - token
+    TokenVerifyWithUser:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Deprecated. Use `refresh_token` instead.
+          deprecated: true
+        refresh_token:
+          type: string
+      required:
+      - refresh_token
+    Account:
+      type: object
+      description: This serializer must be kept in sync with `UserSerializer`.
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+          minLength: 2
+        language:
+          type: string
+          description: 'An ISO 639 language code (with optional variant) selected by the user. Ex: en-GB.'
+          maxLength: 10
+          minLength: 2
+        email_notification_frequency:
+          allOf:
+          - $ref: '#/components/schemas/EmailNotificationFrequencyEnum'
+          description: 'The maximum frequency at which the user wants to receive email notifications.
+
+
+            * `instant` - instant
+
+            * `daily` - daily
+
+            * `weekly` - weekly
+
+            * `never` - never'
+        completed_onboarding:
+          type: boolean
+          description: Indicates whether the user has completed the onboarding.
+        completed_guided_tours:
+          type: array
+          items:
+            type: string
+          description: Indicates which guided tour types have been completed.
+    Dashboard:
+      type: object
+      properties:
+        workspace_invitations:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserWorkspaceInvitation'
+      required:
+      - workspace_invitations
+    TokenObtainPairWithUser:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          format: email
+          description: Deprecated. Use `email` instead.
+          deprecated: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - password
+    PatchedAccount:
+      type: object
+      description: This serializer must be kept in sync with `UserSerializer`.
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+          minLength: 2
+        language:
+          type: string
+          description: 'An ISO 639 language code (with optional variant) selected by the user. Ex: en-GB.'
+          maxLength: 10
+          minLength: 2
+        email_notification_frequency:
+          allOf:
+          - $ref: '#/components/schemas/EmailNotificationFrequencyEnum'
+          description: 'The maximum frequency at which the user wants to receive email notifications.
+
+
+            * `instant` - instant
+
+            * `daily` - daily
+
+            * `weekly` - weekly
+
+            * `never` - never'
+        completed_onboarding:
+          type: boolean
+          description: Indicates whether the user has completed the onboarding.
+        completed_guided_tours:
+          type: array
+          items:
+            type: string
+          description: Indicates which guided tour types have been completed.
+    PatchedUndoRedoRequest:
+      type: object
+      properties:
+        scopes:
+          allOf:
+          - $ref: '#/components/schemas/ActionScopes'
+          description: A JSON object with keys and values representing the various action scopes to include
+            when undoing or redoing. Every action in Baserow will be associated with a action scope, when
+            undoing/redoing only actions which match any of the provided scope key:value pairs will included
+            when this endpoint picks the next action to undo/redo. If no scopes are provided then all
+            actions performed in the client session will be included when undoing/redoing.
+    UndoRedoAction:
+      type: object
+      properties:
+        action_type:
+          type: string
+          nullable: true
+          description: If an action was undone/redone/skipped due to an error this field will contain
+            the type of the action that was undone/redone.
+        action_scope:
+          type: string
+          nullable: true
+          description: If an action was undone/redone/skipped due to an error this field will contain
+            the scope of the action that was undone/redone.
+    EmailNotificationFrequencyEnum:
+      enum:
+      - instant
+      - daily
+      - weekly
+      - never
+      type: string
+      description: '* `instant` - instant
+
+        * `daily` - daily
+
+        * `weekly` - weekly
+
+        * `never` - never'
+    UserWorkspaceInvitation:
+      type: object
+      description: 'This serializer is used for displaying the invitation to the user that doesn''t
+
+        have access to the workspace yet, so not for invitation management purposes.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        invited_by:
+          type: string
+          readOnly: true
+        workspace:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          description: The email address of the user that the invitation is meant for. Only a user with
+            that email address can accept it.
+          maxLength: 254
+        message:
+          type: string
+          readOnly: true
+          description: An optional message that the invitor can provide. This will be visible to the receiver
+            of the invitation.
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+        email_exists:
+          type: boolean
+          readOnly: true
+      required:
+      - created_on
+      - email
+      - email_exists
+      - id
+      - invited_by
+      - message
+      - workspace
+    ActionScopes:
+      type: object
+      description: 'Mixin to a DRF serializer class to raise an exception if data with unknown fields
+
+        is provided to the serializer.'
+      properties:
+        root:
+          type: boolean
+          nullable: true
+          description: If set to true then actions registered in the root scope will be included when
+            undoing or redoing.
+        workspace:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: If set to a workspaces id then any actions directly related to that workspace will
+            be be included when undoing or redoing.
+        application:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: If set to an applications id then any actions directly related to that application
+            will be be included when undoing or redoing.
+        table:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: If set to a table id then any actions directly related to that table will be be
+            included when undoing or redoing.
+        view:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: If set to an view id then any actions directly related to that view will be be
+            included when undoing or redoing.
+        teams_in_workspace:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: If set to a workspace id then any actions directly related to that workspace will
+            be be included when undoing or redoing.
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags:
+- name: User

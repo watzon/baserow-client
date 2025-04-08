@@ -1,0 +1,364 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/trash/:
+    get:
+      operationId: get_trash_structure
+      description: Responds with the workspaces and applications available for the requesting user to
+        inspect the trash contents of.
+      tags:
+      - Trash
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrashStructure'
+          description: ''
+  /api/trash/restore/:
+    patch:
+      operationId: restore
+      description: Restores the specified trashed item back into baserow.
+      tags:
+      - Trash
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTrashEntryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTrashEntryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTrashEntryRequest'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_TRASH_ITEM_DOES_NOT_EXIST
+                    - ERROR_CANNOT_RESTORE_PARENT_BEFORE_CHILD
+                    - ERROR_PARENT_ID_MUST_NOT_BE_PROVIDED
+                    - ERROR_PARENT_ID_MUST_BE_PROVIDED
+                    - ERROR_CANT_RESTORE_AS_RELATED_TABLE_TRASHED
+                    - ERROR_CANNOT_RESTORE_ITEM_NOT_OWNED_BY_USER
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/trash/workspace/{workspace_id}/:
+    get:
+      operationId: workspace_get_contents
+      description: Responds with trash contents for a workspace optionally filtered to a specific application.
+      parameters:
+      - in: query
+        name: application_id
+        schema:
+          type: integer
+        description: Optionally filters down the trash to only items for this application in the workspace.
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Selects which page of trash contents should be returned.
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: Returns the trash for the workspace with this id.
+        required: true
+      tags:
+      - Trash
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginationSerializerTrashContents'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_APPLICATION_NOT_IN_GROUP
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                    - ERROR_APPLICATION_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    delete:
+      operationId: workspace_empty_contents
+      description: Empties the specified workspace and/or application of trash, including the workspace
+        and application themselves if they are trashed also.
+      parameters:
+      - in: query
+        name: application_id
+        schema:
+          type: integer
+        description: Optionally filters down the trash to delete to only items for this application in
+          the workspace.
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: The workspace whose trash contents to empty, including the workspace itself if it
+          is also trashed.
+        required: true
+      tags:
+      - Trash
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_APPLICATION_NOT_IN_GROUP
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                    - ERROR_APPLICATION_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  schemas:
+    TrashStructure:
+      type: object
+      properties:
+        workspaces:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrashStructureWorkspace'
+          description: An array of workspace trash structure records
+      required:
+      - workspaces
+    PatchedTrashEntryRequest:
+      type: object
+      description: 'Mixin to a DRF serializer class to raise an exception if data with unknown fields
+
+        is provided to the serializer.'
+      properties:
+        trash_item_id:
+          type: integer
+          minimum: 0
+        parent_trash_item_id:
+          type: integer
+          minimum: 0
+          nullable: true
+        trash_item_type:
+          $ref: '#/components/schemas/TrashItemTypeEnum'
+    PaginationSerializerTrashContents:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: The total amount of results.
+        next:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to the next page.
+        previous:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to the previous page.
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrashContents'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    TrashStructureWorkspace:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 0
+        trashed:
+          type: boolean
+        name:
+          type: string
+        applications:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrashStructureApplication'
+      required:
+      - applications
+      - id
+      - name
+      - trashed
+    TrashItemTypeEnum:
+      enum:
+      - workspace
+      - application
+      - table
+      - field
+      - row
+      - rows
+      - view
+      - builder_domain
+      - widget
+      - row_comment
+      - team
+      type: string
+      description: '* `workspace` - workspace
+
+        * `application` - application
+
+        * `table` - table
+
+        * `field` - field
+
+        * `row` - row
+
+        * `rows` - rows
+
+        * `view` - view
+
+        * `builder_domain` - builder_domain
+
+        * `widget` - widget
+
+        * `row_comment` - row_comment
+
+        * `team` - team'
+    TrashContents:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user_who_trashed:
+          type: string
+          readOnly: true
+        trash_item_type:
+          type: string
+        trash_item_id:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        parent_trash_item_id:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        trashed_at:
+          type: string
+          format: date-time
+          readOnly: true
+        application:
+          type: integer
+          nullable: true
+        workspace:
+          type: integer
+        name:
+          type: string
+        names:
+          type: array
+          items:
+            type: string
+          nullable: true
+        parent_name:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - parent_trash_item_id
+      - trash_item_id
+      - trash_item_type
+      - trashed_at
+      - user_who_trashed
+      - workspace
+    TrashStructureApplication:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 160
+        trashed:
+          type: boolean
+      required:
+      - id
+      - name
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags:
+- name: Trash

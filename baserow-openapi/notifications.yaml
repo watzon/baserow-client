@@ -1,0 +1,365 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/notifications/{workspace_id}/:
+    get:
+      operationId: list_workspace_notifications
+      description: Lists the notifications for the given workspace and the current user. The response
+        is paginated and the limit and offset parameters can be controlled using the query parameters.
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Defines how many notifications should be returned.
+      - in: query
+        name: offset
+        schema:
+          type: integer
+        description: Defines the offset of the notifications that should be returned.
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: The workspace id that the notifications belong to.
+        required: true
+      tags:
+      - Notifications
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginationSerializerNotificationRecipient'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    delete:
+      operationId: clear_workspace_notifications
+      description: Clear all the notifications for the given workspace and user.
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: The workspace the notifications are in.
+        required: true
+      tags:
+      - Notifications
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/notifications/{workspace_id}/{notification_id}/:
+    patch:
+      operationId: mark_notification_as_read
+      description: Marks a notification as read.
+      parameters:
+      - in: path
+        name: notification_id
+        schema:
+          type: integer
+        description: The notification id to update.
+        required: true
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: The workspace the notification is in.
+        required: true
+      tags:
+      - Notifications
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationRecipient'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                    - NOTIFICATION_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/notifications/{workspace_id}/mark-all-as-read/:
+    post:
+      operationId: mark_all_workspace_notifications_as_read
+      description: Mark as read all the notifications for the given workspace and user.
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: The workspace the notifications are in.
+        required: true
+      tags:
+      - Notifications
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  schemas:
+    PaginationSerializerNotificationRecipient:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: The total amount of results.
+        next:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to the next page.
+        previous:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to the previous page.
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationRecipient'
+      required:
+      - count
+      - next
+      - previous
+      - results
+    NotificationRecipient:
+      type: object
+      description: 'Serialize notification data along with the recipient information about the
+
+        read status for the given user.'
+      properties:
+        id:
+          type: integer
+          description: The id of the notification.
+        type:
+          type: string
+          description: The type of notification
+        sender:
+          allOf:
+          - $ref: '#/components/schemas/Sender'
+          description: The user that sent the notification.
+        workspace:
+          type: string
+          readOnly: true
+          description: The workspace that the notification is in (if any).
+        created_on:
+          type: string
+          format: date-time
+          description: The date and time that the notification was created.
+        read:
+          type: boolean
+          description: 'If True, then the notification has been read by the user. '
+        data:
+          description: The data associated with the notification.
+      required:
+      - created_on
+      - data
+      - id
+      - sender
+      - type
+      - workspace
+    Sender:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+      required:
+      - id
+      - username
+  securitySchemes:
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags: []

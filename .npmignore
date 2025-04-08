@@ -1,0 +1,20 @@
+# Source
+src/
+test/
+baserow-openapi/
+
+# Config files
+.github/
+.vscode/
+.idea/
+.git/
+.gitignore
+tsconfig.json
+vite.config.ts
+*.tgz
+
+# Development files
+*.log
+*.swp
+node_modules/
+bun.lockb 

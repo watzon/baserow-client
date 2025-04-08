@@ -1,0 +1,4189 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/jobs/:
+    get:
+      operationId: list_job
+      description: List all existing jobs. Jobs are task executed asynchronously in the background. You
+        can use the `get_job` endpoint to read the currentprogress of a the job.
+      parameters:
+      - in: query
+        name: job_ids
+        schema:
+          type: string
+        description: A comma separated list of job ids in the desired order.The jobs will be returned
+          in the same order as the ids.If a job id is not found it will be ignored.
+      - in: query
+        name: states
+        schema:
+          type: string
+        description: 'A comma separated list of jobs state to look for. The only possible values are:
+          `pending`, `finished`, `failed` and `cancelled`. It''s possible to exclude a state by prefixing
+          it with a `!`. '
+      tags:
+      - Jobs
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Job_TypeJob'
+          description: ''
+    post:
+      operationId: create_job
+      description: Creates a new job. This job runs asynchronously in the background and execute the task
+        specific to the provided typeparameters. The `get_job` can be used to get the current state of
+        the job.
+      tags:
+      - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Job_TypeCreateJob'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Job_TypeCreateJob'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Job_TypeCreateJob'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job_TypeJob'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_REQUEST_BODY_VALIDATION
+                    - ERROR_MAX_JOB_COUNT_EXCEEDED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/jobs/{job_id}/:
+    get:
+      operationId: get_job
+      description: Returns the information related to the provided job id. This endpoint can for example
+        be polled to get the state and progress of the job in real time.
+      parameters:
+      - in: path
+        name: job_id
+        schema:
+          type: integer
+        description: The job id to lookup information about.
+        required: true
+      tags:
+      - Jobs
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job_TypeJob'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_JOB_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/jobs/{job_id}/cancel/:
+    post:
+      operationId: cancel_job
+      description: 'Cancels a job. Note: you can cancel only a scheduled or a job that is already running.
+        The user requesting must be the owner of the job to cancel.'
+      parameters:
+      - in: path
+        name: job_id
+        schema:
+          type: integer
+        description: The job id to cancel.
+        required: true
+      tags:
+      - Jobs
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job_TypeJob'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_JOB_NOT_CANCELLABLE
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_JOB_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+  schemas:
+    Job_TypeCreateJob:
+      oneOf:
+      - $ref: '#/components/schemas/DuplicateApplicationJobCreateJob'
+      - $ref: '#/components/schemas/InstallTemplateJobCreateJob'
+      - $ref: '#/components/schemas/CreateSnapshotJobCreateJob'
+      - $ref: '#/components/schemas/RestoreSnapshotJobCreateJob'
+      - $ref: '#/components/schemas/ExportApplicationsJobCreateJob'
+      - $ref: '#/components/schemas/ImportApplicationsJobCreateJob'
+      - $ref: '#/components/schemas/AirtableImportJobCreateJob'
+      - $ref: '#/components/schemas/FileImportJobCreateJob'
+      - $ref: '#/components/schemas/DuplicateTableJobCreateJob'
+      - $ref: '#/components/schemas/DuplicateFieldJobCreateJob'
+      - $ref: '#/components/schemas/SyncDataSyncTableJobCreateJob'
+      - $ref: '#/components/schemas/DuplicatePageJobCreateJob'
+      - $ref: '#/components/schemas/PublishDomainJobCreateJob'
+      - $ref: '#/components/schemas/AuditLogExportJobCreateJob'
+      discriminator:
+        propertyName: type
+        mapping:
+          duplicate_application: '#/components/schemas/DuplicateApplicationJobCreateJob'
+          install_template: '#/components/schemas/InstallTemplateJobCreateJob'
+          create_snapshot: '#/components/schemas/CreateSnapshotJobCreateJob'
+          restore_snapshot: '#/components/schemas/RestoreSnapshotJobCreateJob'
+          export_applications: '#/components/schemas/ExportApplicationsJobCreateJob'
+          import_applications: '#/components/schemas/ImportApplicationsJobCreateJob'
+          airtable: '#/components/schemas/AirtableImportJobCreateJob'
+          file_import: '#/components/schemas/FileImportJobCreateJob'
+          duplicate_table: '#/components/schemas/DuplicateTableJobCreateJob'
+          duplicate_field: '#/components/schemas/DuplicateFieldJobCreateJob'
+          sync_data_sync_table: '#/components/schemas/SyncDataSyncTableJobCreateJob'
+          duplicate_page: '#/components/schemas/DuplicatePageJobCreateJob'
+          publish_domain: '#/components/schemas/PublishDomainJobCreateJob'
+          audit_log_export: '#/components/schemas/AuditLogExportJobCreateJob'
+    Job_TypeJob:
+      oneOf:
+      - $ref: '#/components/schemas/DuplicateApplicationJobJob'
+      - $ref: '#/components/schemas/InstallTemplateJobJob'
+      - $ref: '#/components/schemas/CreateSnapshotJobJob'
+      - $ref: '#/components/schemas/RestoreSnapshotJobJob'
+      - $ref: '#/components/schemas/ExportApplicationsJobJob'
+      - $ref: '#/components/schemas/ImportApplicationsJobJob'
+      - $ref: '#/components/schemas/AirtableImportJobJob'
+      - $ref: '#/components/schemas/FileImportJobJob'
+      - $ref: '#/components/schemas/DuplicateTableJobJob'
+      - $ref: '#/components/schemas/DuplicateFieldJobJob'
+      - $ref: '#/components/schemas/SyncDataSyncTableJobJob'
+      - $ref: '#/components/schemas/DuplicatePageJobJob'
+      - $ref: '#/components/schemas/PublishDomainJobJob'
+      - $ref: '#/components/schemas/AuditLogExportJobJob'
+      discriminator:
+        propertyName: type
+        mapping:
+          duplicate_application: '#/components/schemas/DuplicateApplicationJobJob'
+          install_template: '#/components/schemas/InstallTemplateJobJob'
+          create_snapshot: '#/components/schemas/CreateSnapshotJobJob'
+          restore_snapshot: '#/components/schemas/RestoreSnapshotJobJob'
+          export_applications: '#/components/schemas/ExportApplicationsJobJob'
+          import_applications: '#/components/schemas/ImportApplicationsJobJob'
+          airtable: '#/components/schemas/AirtableImportJobJob'
+          file_import: '#/components/schemas/FileImportJobJob'
+          duplicate_table: '#/components/schemas/DuplicateTableJobJob'
+          duplicate_field: '#/components/schemas/DuplicateFieldJobJob'
+          sync_data_sync_table: '#/components/schemas/SyncDataSyncTableJobJob'
+          duplicate_page: '#/components/schemas/DuplicatePageJobJob'
+          publish_domain: '#/components/schemas/PublishDomainJobJob'
+          audit_log_export: '#/components/schemas/AuditLogExportJobJob'
+    PublishDomainJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+      required:
+      - type
+    AuditLogExportJobCreateJob:
+      type: object
+      description: 'When mixed in to a model serializer for an ExportJob this will add an url field
+
+        with the actual usable url of the export job''s file (if it has one).'
+      properties:
+        url:
+          type: string
+          format: uri
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        export_charset:
+          allOf:
+          - $ref: '#/components/schemas/ExportCharsetEnum'
+          default: utf-8
+          description: 'The character set to use when creating the export file.
+
+
+            * `utf-8` - utf-8
+
+            * `iso-8859-6` - iso-8859-6
+
+            * `windows-1256` - windows-1256
+
+            * `iso-8859-4` - iso-8859-4
+
+            * `windows-1257` - windows-1257
+
+            * `iso-8859-14` - iso-8859-14
+
+            * `iso-8859-2` - iso-8859-2
+
+            * `windows-1250` - windows-1250
+
+            * `gbk` - gbk
+
+            * `gb18030` - gb18030
+
+            * `big5` - big5
+
+            * `koi8-r` - koi8-r
+
+            * `koi8-u` - koi8-u
+
+            * `iso-8859-5` - iso-8859-5
+
+            * `windows-1251` - windows-1251
+
+            * `x-mac-cyrillic` - mac-cyrillic
+
+            * `iso-8859-7` - iso-8859-7
+
+            * `windows-1253` - windows-1253
+
+            * `iso-8859-8` - iso-8859-8
+
+            * `windows-1255` - windows-1255
+
+            * `euc-jp` - euc-jp
+
+            * `iso-2022-jp` - iso-2022-jp
+
+            * `shift-jis` - shift-jis
+
+            * `euc-kr` - euc-kr
+
+            * `macintosh` - macintosh
+
+            * `iso-8859-10` - iso-8859-10
+
+            * `iso-8859-16` - iso-8859-16
+
+            * `windows-874` - cp874
+
+            * `windows-1254` - windows-1254
+
+            * `windows-1258` - windows-1258
+
+            * `iso-8859-1` - iso-8859-1
+
+            * `windows-1252` - windows-1252
+
+            * `iso-8859-3` - iso-8859-3'
+        csv_column_separator:
+          allOf:
+          - $ref: '#/components/schemas/CsvColumnSeparatorEnum'
+          default: ','
+          description: "The value used to separate columns in the resulting csv file.\n\n* `,` - ,\n*\
+            \ `;` - ;\n* `|` - |\n* `tab` - \t\n* `record_separator` - \x1E\n* `unit_separator` - \x1F"
+        csv_first_row_header:
+          type: boolean
+          default: true
+          description: Whether or not to generate a header row at the top of the csv file.
+        filter_user_id:
+          type: integer
+          minimum: 0
+          description: 'Optional: The user to filter the audit log by.'
+        filter_workspace_id:
+          type: integer
+          minimum: 0
+          description: 'Optional: The workspace to filter the audit log by.'
+        filter_action_type:
+          allOf:
+          - $ref: '#/components/schemas/FilterActionTypeEnum'
+          description: 'Optional: The action type to filter the audit log by.
+
+
+            * `create_group` - create_group
+
+            * `delete_group` - delete_group
+
+            * `update_group` - update_group
+
+            * `order_groups` - order_groups
+
+            * `create_application` - create_application
+
+            * `update_application` - update_application
+
+            * `delete_application` - delete_application
+
+            * `order_applications` - order_applications
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_group_invitation` - create_group_invitation
+
+            * `delete_group_invitation` - delete_group_invitation
+
+            * `accept_group_invitation` - accept_group_invitation
+
+            * `reject_group_invitation` - reject_group_invitation
+
+            * `update_group_invitation_permissions` - update_group_invitation_permissions
+
+            * `leave_group` - leave_group
+
+            * `create_initial_workspace` - create_initial_workspace
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `create_snapshot` - create_snapshot
+
+            * `delete_snapshot` - delete_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `empty_trash` - empty_trash
+
+            * `restore_from_trash` - restore_from_trash
+
+            * `create_user` - create_user
+
+            * `update_user` - update_user
+
+            * `schedule_user_deletion` - schedule_user_deletion
+
+            * `cancel_user_deletion` - cancel_user_deletion
+
+            * `sign_in_user` - sign_in_user
+
+            * `change_user_password` - change_user_password
+
+            * `send_reset_user_password` - send_reset_user_password
+
+            * `reset_user_password` - reset_user_password
+
+            * `send_verify_email` - send_verify_email
+
+            * `verify_email` - verify_email
+
+            * `create_db_token` - create_db_token
+
+            * `update_db_token_name` - update_db_token_name
+
+            * `update_db_token_permissions` - update_db_token_permissions
+
+            * `rotate_db_token_key` - rotate_db_token_key
+
+            * `delete_db_token_key` - delete_db_token_key
+
+            * `create_webhook` - create_webhook
+
+            * `delete_webhook` - delete_webhook
+
+            * `update_webhook` - update_webhook
+
+            * `export_table` - export_table
+
+            * `import_database_from_airtable` - import_database_from_airtable
+
+            * `create_table` - create_table
+
+            * `delete_table` - delete_table
+
+            * `order_tables` - order_tables
+
+            * `update_table` - update_table
+
+            * `duplicate_table` - duplicate_table
+
+            * `create_row` - create_row
+
+            * `create_rows` - create_rows
+
+            * `import_rows` - import_rows
+
+            * `delete_row` - delete_row
+
+            * `delete_rows` - delete_rows
+
+            * `move_row` - move_row
+
+            * `update_row` - update_row
+
+            * `update_rows` - update_rows
+
+            * `create_view` - create_view
+
+            * `duplicate_view` - duplicate_view
+
+            * `delete_view` - delete_view
+
+            * `order_views` - order_views
+
+            * `update_view` - update_view
+
+            * `create_view_filter` - create_view_filter
+
+            * `update_view_filter` - update_view_filter
+
+            * `delete_view_filter` - delete_view_filter
+
+            * `create_view_sort` - create_view_sort
+
+            * `update_view_sort` - update_view_sort
+
+            * `delete_view_sort` - delete_view_sort
+
+            * `create_view_group` - create_view_group
+
+            * `update_view_group` - update_view_group
+
+            * `delete_view_group` - delete_view_group
+
+            * `submit_form` - submit_form
+
+            * `rotate_view_slug` - rotate_view_slug
+
+            * `update_view_field_options` - update_view_field_options
+
+            * `create_decoration` - create_decoration
+
+            * `update_decoration` - update_decoration
+
+            * `delete_decoration` - delete_decoration
+
+            * `create_view_filter_group` - create_view_filter_group
+
+            * `update_view_filter_group` - update_view_filter_group
+
+            * `delete_view_filter_group` - delete_view_filter_group
+
+            * `create_data_sync_table` - create_data_sync_table
+
+            * `update_data_sync_table` - update_data_sync_table
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `create_field` - create_field
+
+            * `delete_field` - delete_field
+
+            * `update_field` - update_field
+
+            * `duplicate_field` - duplicate_field
+
+            * `change_primary_field` - change_primary_field
+
+            * `create_widget` - create_widget
+
+            * `update_widget` - update_widget
+
+            * `delete_widget` - delete_widget
+
+            * `update_dashboard_data_source` - update_dashboard_data_source
+
+            * `generate_formula_with_ai` - generate_formula_with_ai
+
+            * `create_row_comment` - create_row_comment
+
+            * `delete_row_comment` - delete_row_comment
+
+            * `update_row_comment` - update_row_comment
+
+            * `rotate_calendar_ical_view_slug` - rotate_calendar_ical_view_slug
+
+            * `create_team` - create_team
+
+            * `update_team` - update_team
+
+            * `delete_team` - delete_team
+
+            * `create_team_subject` - create_team_subject
+
+            * `delete_team_subject` - delete_team_subject
+
+            * `batch_assign_role` - batch_assign_role
+
+            * `update_periodic_data_sync_interval` - update_periodic_data_sync_interval'
+        filter_from_timestamp:
+          type: string
+          format: date-time
+          description: 'Optional: The start date to filter the audit log by.'
+        filter_to_timestamp:
+          type: string
+          format: date-time
+          description: 'Optional: The end date to filter the audit log by.'
+        exclude_columns:
+          type: string
+          description: 'Optional: A comma separated list of column names to exclude from the export. Available
+            options are `user_email, user_id, workspace_name, workspace_id, type, description, timestamp,
+            ip_address`.'
+      required:
+      - type
+      - url
+    SyncDataSyncTableJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        data_sync_id:
+          type: integer
+          description: The ID of data sync to sync.
+      required:
+      - data_sync_id
+      - type
+    FileImportJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+      required:
+      - type
+    AirtableImportJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        workspace_id:
+          type: integer
+          description: The workspace ID where the Airtable base must be imported into.
+        airtable_share_url:
+          type: string
+          format: uri
+          description: The publicly shared URL of the Airtable base (e.g. https://airtable.com/shrxxxxxxxxxxxxxx)
+        skip_files:
+          type: boolean
+          default: false
+          description: If true, then the files are not downloaded and imported.
+        session:
+          type: string
+          nullable: true
+          description: Optionally provide a session object that's used as authentication.
+        session_signature:
+          type: string
+          nullable: true
+          description: The matching session signature if a session is provided.
+      required:
+      - airtable_share_url
+      - type
+    ImportApplicationsJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        resource_id:
+          type: integer
+          minimum: 1
+          description: The ID of the import resource that contains the applications.
+      required:
+      - resource_id
+      - type
+    CreateSnapshotJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        snapshot:
+          $ref: '#/components/schemas/Snapshot'
+      required:
+      - snapshot
+      - type
+    DuplicateTableJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        table_id:
+          type: integer
+          description: The ID of the table to duplicate.
+      required:
+      - table_id
+      - type
+    DuplicatePageJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        page_id:
+          type: integer
+          description: The ID of the page to duplicate.
+      required:
+      - page_id
+      - type
+    DuplicateApplicationJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        application_id:
+          type: integer
+          description: The application ID to duplicate.
+      required:
+      - application_id
+      - type
+    ExportApplicationsJobCreateJob:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          readOnly: true
+        exported_file_name:
+          type: string
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        application_ids:
+          type: array
+          items:
+            type: integer
+          nullable: true
+          description: The application IDs to export. If not provided, all the applications for the workspace
+            will be exported.
+        only_structure:
+          type: boolean
+          default: false
+          description: If True, only the structure of the applications will be exported. If False, the
+            data will be included as well.
+      required:
+      - exported_file_name
+      - type
+      - url
+    InstallTemplateJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        workspace_id:
+          type: integer
+          description: The ID of the workspace where the template will be installed.
+        template_id:
+          type: integer
+          description: The template ID that will be installed.
+      required:
+      - template_id
+      - type
+    DuplicateFieldJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        field_id:
+          type: integer
+          description: The ID of the field to duplicate.
+        duplicate_data:
+          type: boolean
+          default: false
+          description: Whether to duplicate the data of the field.
+      required:
+      - field_id
+      - type
+    RestoreSnapshotJobCreateJob:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/Type99fEnum'
+          description: 'The type of the job.
+
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_snapshot` - create_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `airtable` - airtable
+
+            * `file_import` - file_import
+
+            * `duplicate_table` - duplicate_table
+
+            * `duplicate_field` - duplicate_field
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `duplicate_page` - duplicate_page
+
+            * `publish_domain` - publish_domain
+
+            * `audit_log_export` - audit_log_export'
+        snapshot:
+          $ref: '#/components/schemas/Snapshot'
+      required:
+      - snapshot
+      - type
+    DuplicateFieldJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        original_field:
+          allOf:
+          - $ref: '#/components/schemas/Field'
+          readOnly: true
+        duplicated_field:
+          allOf:
+          - $ref: '#/components/schemas/FieldSerializerWithRelatedFields'
+          readOnly: true
+      required:
+      - duplicated_field
+      - id
+      - original_field
+      - progress_percentage
+      - state
+      - type
+    RestoreSnapshotJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        snapshot:
+          $ref: '#/components/schemas/Snapshot'
+      required:
+      - id
+      - progress_percentage
+      - snapshot
+      - state
+      - type
+    AuditLogExportJobJob:
+      type: object
+      description: 'When mixed in to a model serializer for an ExportJob this will add an url field
+
+        with the actual usable url of the export job''s file (if it has one).'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        csv_column_separator:
+          allOf:
+          - $ref: '#/components/schemas/CsvColumnSeparatorEnum'
+          default: ','
+          description: "The value used to separate columns in the resulting csv file.\n\n* `,` - ,\n*\
+            \ `;` - ;\n* `|` - |\n* `tab` - \t\n* `record_separator` - \x1E\n* `unit_separator` - \x1F"
+        csv_first_row_header:
+          type: boolean
+          default: true
+          description: Whether or not to generate a header row at the top of the csv file.
+        export_charset:
+          allOf:
+          - $ref: '#/components/schemas/ExportCharsetEnum'
+          default: utf-8
+          description: 'The character set to use when creating the export file.
+
+
+            * `utf-8` - utf-8
+
+            * `iso-8859-6` - iso-8859-6
+
+            * `windows-1256` - windows-1256
+
+            * `iso-8859-4` - iso-8859-4
+
+            * `windows-1257` - windows-1257
+
+            * `iso-8859-14` - iso-8859-14
+
+            * `iso-8859-2` - iso-8859-2
+
+            * `windows-1250` - windows-1250
+
+            * `gbk` - gbk
+
+            * `gb18030` - gb18030
+
+            * `big5` - big5
+
+            * `koi8-r` - koi8-r
+
+            * `koi8-u` - koi8-u
+
+            * `iso-8859-5` - iso-8859-5
+
+            * `windows-1251` - windows-1251
+
+            * `x-mac-cyrillic` - mac-cyrillic
+
+            * `iso-8859-7` - iso-8859-7
+
+            * `windows-1253` - windows-1253
+
+            * `iso-8859-8` - iso-8859-8
+
+            * `windows-1255` - windows-1255
+
+            * `euc-jp` - euc-jp
+
+            * `iso-2022-jp` - iso-2022-jp
+
+            * `shift-jis` - shift-jis
+
+            * `euc-kr` - euc-kr
+
+            * `macintosh` - macintosh
+
+            * `iso-8859-10` - iso-8859-10
+
+            * `iso-8859-16` - iso-8859-16
+
+            * `windows-874` - cp874
+
+            * `windows-1254` - windows-1254
+
+            * `windows-1258` - windows-1258
+
+            * `iso-8859-1` - iso-8859-1
+
+            * `windows-1252` - windows-1252
+
+            * `iso-8859-3` - iso-8859-3'
+        filter_user_id:
+          type: integer
+          minimum: 0
+          description: 'Optional: The user to filter the audit log by.'
+        filter_workspace_id:
+          type: integer
+          minimum: 0
+          description: 'Optional: The workspace to filter the audit log by.'
+        filter_action_type:
+          allOf:
+          - $ref: '#/components/schemas/FilterActionTypeEnum'
+          description: 'Optional: The action type to filter the audit log by.
+
+
+            * `create_group` - create_group
+
+            * `delete_group` - delete_group
+
+            * `update_group` - update_group
+
+            * `order_groups` - order_groups
+
+            * `create_application` - create_application
+
+            * `update_application` - update_application
+
+            * `delete_application` - delete_application
+
+            * `order_applications` - order_applications
+
+            * `duplicate_application` - duplicate_application
+
+            * `install_template` - install_template
+
+            * `create_group_invitation` - create_group_invitation
+
+            * `delete_group_invitation` - delete_group_invitation
+
+            * `accept_group_invitation` - accept_group_invitation
+
+            * `reject_group_invitation` - reject_group_invitation
+
+            * `update_group_invitation_permissions` - update_group_invitation_permissions
+
+            * `leave_group` - leave_group
+
+            * `create_initial_workspace` - create_initial_workspace
+
+            * `export_applications` - export_applications
+
+            * `import_applications` - import_applications
+
+            * `create_snapshot` - create_snapshot
+
+            * `delete_snapshot` - delete_snapshot
+
+            * `restore_snapshot` - restore_snapshot
+
+            * `empty_trash` - empty_trash
+
+            * `restore_from_trash` - restore_from_trash
+
+            * `create_user` - create_user
+
+            * `update_user` - update_user
+
+            * `schedule_user_deletion` - schedule_user_deletion
+
+            * `cancel_user_deletion` - cancel_user_deletion
+
+            * `sign_in_user` - sign_in_user
+
+            * `change_user_password` - change_user_password
+
+            * `send_reset_user_password` - send_reset_user_password
+
+            * `reset_user_password` - reset_user_password
+
+            * `send_verify_email` - send_verify_email
+
+            * `verify_email` - verify_email
+
+            * `create_db_token` - create_db_token
+
+            * `update_db_token_name` - update_db_token_name
+
+            * `update_db_token_permissions` - update_db_token_permissions
+
+            * `rotate_db_token_key` - rotate_db_token_key
+
+            * `delete_db_token_key` - delete_db_token_key
+
+            * `create_webhook` - create_webhook
+
+            * `delete_webhook` - delete_webhook
+
+            * `update_webhook` - update_webhook
+
+            * `export_table` - export_table
+
+            * `import_database_from_airtable` - import_database_from_airtable
+
+            * `create_table` - create_table
+
+            * `delete_table` - delete_table
+
+            * `order_tables` - order_tables
+
+            * `update_table` - update_table
+
+            * `duplicate_table` - duplicate_table
+
+            * `create_row` - create_row
+
+            * `create_rows` - create_rows
+
+            * `import_rows` - import_rows
+
+            * `delete_row` - delete_row
+
+            * `delete_rows` - delete_rows
+
+            * `move_row` - move_row
+
+            * `update_row` - update_row
+
+            * `update_rows` - update_rows
+
+            * `create_view` - create_view
+
+            * `duplicate_view` - duplicate_view
+
+            * `delete_view` - delete_view
+
+            * `order_views` - order_views
+
+            * `update_view` - update_view
+
+            * `create_view_filter` - create_view_filter
+
+            * `update_view_filter` - update_view_filter
+
+            * `delete_view_filter` - delete_view_filter
+
+            * `create_view_sort` - create_view_sort
+
+            * `update_view_sort` - update_view_sort
+
+            * `delete_view_sort` - delete_view_sort
+
+            * `create_view_group` - create_view_group
+
+            * `update_view_group` - update_view_group
+
+            * `delete_view_group` - delete_view_group
+
+            * `submit_form` - submit_form
+
+            * `rotate_view_slug` - rotate_view_slug
+
+            * `update_view_field_options` - update_view_field_options
+
+            * `create_decoration` - create_decoration
+
+            * `update_decoration` - update_decoration
+
+            * `delete_decoration` - delete_decoration
+
+            * `create_view_filter_group` - create_view_filter_group
+
+            * `update_view_filter_group` - update_view_filter_group
+
+            * `delete_view_filter_group` - delete_view_filter_group
+
+            * `create_data_sync_table` - create_data_sync_table
+
+            * `update_data_sync_table` - update_data_sync_table
+
+            * `sync_data_sync_table` - sync_data_sync_table
+
+            * `create_field` - create_field
+
+            * `delete_field` - delete_field
+
+            * `update_field` - update_field
+
+            * `duplicate_field` - duplicate_field
+
+            * `change_primary_field` - change_primary_field
+
+            * `create_widget` - create_widget
+
+            * `update_widget` - update_widget
+
+            * `delete_widget` - delete_widget
+
+            * `update_dashboard_data_source` - update_dashboard_data_source
+
+            * `generate_formula_with_ai` - generate_formula_with_ai
+
+            * `create_row_comment` - create_row_comment
+
+            * `delete_row_comment` - delete_row_comment
+
+            * `update_row_comment` - update_row_comment
+
+            * `rotate_calendar_ical_view_slug` - rotate_calendar_ical_view_slug
+
+            * `create_team` - create_team
+
+            * `update_team` - update_team
+
+            * `delete_team` - delete_team
+
+            * `create_team_subject` - create_team_subject
+
+            * `delete_team_subject` - delete_team_subject
+
+            * `batch_assign_role` - batch_assign_role
+
+            * `update_periodic_data_sync_interval` - update_periodic_data_sync_interval'
+        filter_from_timestamp:
+          type: string
+          format: date-time
+          description: 'Optional: The start date to filter the audit log by.'
+        filter_to_timestamp:
+          type: string
+          format: date-time
+          description: 'Optional: The end date to filter the audit log by.'
+        exclude_columns:
+          type: string
+          description: 'Optional: A comma separated list of column names to exclude from the export. Available
+            options are `user_email, user_id, workspace_name, workspace_id, type, description, timestamp,
+            ip_address`.'
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+          description: The date and time when the export job was created.
+        exported_file_name:
+          type: string
+          readOnly: true
+          description: The name of the file that was created by the export job.
+        url:
+          type: string
+          format: uri
+          readOnly: true
+          description: The URL to download the exported file.
+      required:
+      - created_on
+      - exported_file_name
+      - id
+      - progress_percentage
+      - state
+      - type
+      - url
+    CreateSnapshotJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        snapshot:
+          $ref: '#/components/schemas/Snapshot'
+      required:
+      - id
+      - progress_percentage
+      - snapshot
+      - state
+      - type
+    ExportApplicationsJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        exported_file_name:
+          type: string
+          readOnly: true
+        url:
+          type: string
+          format: uri
+          readOnly: true
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+        workspace_id:
+          type: integer
+          nullable: true
+          description: The workspace that the applications are going to be exported from.
+          readOnly: true
+      required:
+      - created_on
+      - exported_file_name
+      - id
+      - progress_percentage
+      - state
+      - type
+      - url
+      - workspace_id
+    DuplicateApplicationJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        original_application:
+          allOf:
+          - $ref: '#/components/schemas/ApplicationApplication'
+          readOnly: true
+        duplicated_application:
+          allOf:
+          - $ref: '#/components/schemas/ApplicationApplication'
+          readOnly: true
+      required:
+      - duplicated_application
+      - id
+      - original_application
+      - progress_percentage
+      - state
+      - type
+    PublishDomainJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+      required:
+      - id
+      - progress_percentage
+      - state
+      - type
+    DuplicatePageJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        original_page:
+          allOf:
+          - $ref: '#/components/schemas/Page'
+          readOnly: true
+        duplicated_page:
+          allOf:
+          - $ref: '#/components/schemas/Page'
+          readOnly: true
+      required:
+      - duplicated_page
+      - id
+      - original_page
+      - progress_percentage
+      - state
+      - type
+    InstallTemplateJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        workspace:
+          allOf:
+          - $ref: '#/components/schemas/Workspace'
+          readOnly: true
+        template:
+          allOf:
+          - $ref: '#/components/schemas/Template'
+          readOnly: true
+        installed_applications:
+          readOnly: true
+      required:
+      - id
+      - installed_applications
+      - progress_percentage
+      - state
+      - template
+      - type
+      - workspace
+    DuplicateTableJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        original_table:
+          allOf:
+          - $ref: '#/components/schemas/Table'
+          readOnly: true
+        duplicated_table:
+          allOf:
+          - $ref: '#/components/schemas/Table'
+          readOnly: true
+      required:
+      - duplicated_table
+      - id
+      - original_table
+      - progress_percentage
+      - state
+      - type
+    FileImportJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        database_id:
+          type: integer
+          description: Database id where the table will be created.
+        name:
+          type: string
+          description: The name of the new table.
+          maxLength: 255
+        table_id:
+          type: integer
+          description: Table id where the data will be imported.
+        first_row_header:
+          type: boolean
+          default: false
+        report:
+          allOf:
+          - $ref: '#/components/schemas/Report'
+          description: Import error report.
+      required:
+      - database_id
+      - id
+      - progress_percentage
+      - report
+      - state
+      - type
+    SyncDataSyncTableJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        data_sync:
+          allOf:
+          - $ref: '#/components/schemas/DataSync'
+          readOnly: true
+      required:
+      - data_sync
+      - id
+      - progress_percentage
+      - state
+      - type
+    AirtableImportJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        workspace_id:
+          type: integer
+          description: The workspace ID where the Airtable base must be imported into.
+        database:
+          $ref: '#/components/schemas/ApplicationApplication'
+        airtable_share_id:
+          type: string
+          format: uri
+          description: Public ID of the shared Airtable base that must be imported.
+          maxLength: 200
+        skip_files:
+          type: boolean
+          default: false
+          description: If true, then the files are not downloaded and imported.
+      required:
+      - airtable_share_id
+      - database
+      - id
+      - progress_percentage
+      - state
+      - type
+      - workspace_id
+    ImportApplicationsJobJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+          description: The type of the job.
+        progress_percentage:
+          type: integer
+          description: A percentage indicating how far along the job is. 100 means that it's finished.
+        state:
+          type: string
+          description: Indicates the state of the import job.
+        human_readable_error:
+          type: string
+          description: A human readable error message indicating what went wrong.
+        installed_applications: {}
+        workspace_id:
+          type: integer
+        resource:
+          $ref: '#/components/schemas/ImportResource'
+      required:
+      - id
+      - installed_applications
+      - progress_percentage
+      - resource
+      - state
+      - type
+      - workspace_id
+    Type99fEnum:
+      enum:
+      - duplicate_application
+      - install_template
+      - create_snapshot
+      - restore_snapshot
+      - export_applications
+      - import_applications
+      - airtable
+      - file_import
+      - duplicate_table
+      - duplicate_field
+      - sync_data_sync_table
+      - duplicate_page
+      - publish_domain
+      - audit_log_export
+      type: string
+      description: '* `duplicate_application` - duplicate_application
+
+        * `install_template` - install_template
+
+        * `create_snapshot` - create_snapshot
+
+        * `restore_snapshot` - restore_snapshot
+
+        * `export_applications` - export_applications
+
+        * `import_applications` - import_applications
+
+        * `airtable` - airtable
+
+        * `file_import` - file_import
+
+        * `duplicate_table` - duplicate_table
+
+        * `duplicate_field` - duplicate_field
+
+        * `sync_data_sync_table` - sync_data_sync_table
+
+        * `duplicate_page` - duplicate_page
+
+        * `publish_domain` - publish_domain
+
+        * `audit_log_export` - audit_log_export'
+    FilterActionTypeEnum:
+      enum:
+      - create_group
+      - delete_group
+      - update_group
+      - order_groups
+      - create_application
+      - update_application
+      - delete_application
+      - order_applications
+      - duplicate_application
+      - install_template
+      - create_group_invitation
+      - delete_group_invitation
+      - accept_group_invitation
+      - reject_group_invitation
+      - update_group_invitation_permissions
+      - leave_group
+      - create_initial_workspace
+      - export_applications
+      - import_applications
+      - create_snapshot
+      - delete_snapshot
+      - restore_snapshot
+      - empty_trash
+      - restore_from_trash
+      - create_user
+      - update_user
+      - schedule_user_deletion
+      - cancel_user_deletion
+      - sign_in_user
+      - change_user_password
+      - send_reset_user_password
+      - reset_user_password
+      - send_verify_email
+      - verify_email
+      - create_db_token
+      - update_db_token_name
+      - update_db_token_permissions
+      - rotate_db_token_key
+      - delete_db_token_key
+      - create_webhook
+      - delete_webhook
+      - update_webhook
+      - export_table
+      - import_database_from_airtable
+      - create_table
+      - delete_table
+      - order_tables
+      - update_table
+      - duplicate_table
+      - create_row
+      - create_rows
+      - import_rows
+      - delete_row
+      - delete_rows
+      - move_row
+      - update_row
+      - update_rows
+      - create_view
+      - duplicate_view
+      - delete_view
+      - order_views
+      - update_view
+      - create_view_filter
+      - update_view_filter
+      - delete_view_filter
+      - create_view_sort
+      - update_view_sort
+      - delete_view_sort
+      - create_view_group
+      - update_view_group
+      - delete_view_group
+      - submit_form
+      - rotate_view_slug
+      - update_view_field_options
+      - create_decoration
+      - update_decoration
+      - delete_decoration
+      - create_view_filter_group
+      - update_view_filter_group
+      - delete_view_filter_group
+      - create_data_sync_table
+      - update_data_sync_table
+      - sync_data_sync_table
+      - create_field
+      - delete_field
+      - update_field
+      - duplicate_field
+      - change_primary_field
+      - create_widget
+      - update_widget
+      - delete_widget
+      - update_dashboard_data_source
+      - generate_formula_with_ai
+      - create_row_comment
+      - delete_row_comment
+      - update_row_comment
+      - rotate_calendar_ical_view_slug
+      - create_team
+      - update_team
+      - delete_team
+      - create_team_subject
+      - delete_team_subject
+      - batch_assign_role
+      - update_periodic_data_sync_interval
+      type: string
+      description: '* `create_group` - create_group
+
+        * `delete_group` - delete_group
+
+        * `update_group` - update_group
+
+        * `order_groups` - order_groups
+
+        * `create_application` - create_application
+
+        * `update_application` - update_application
+
+        * `delete_application` - delete_application
+
+        * `order_applications` - order_applications
+
+        * `duplicate_application` - duplicate_application
+
+        * `install_template` - install_template
+
+        * `create_group_invitation` - create_group_invitation
+
+        * `delete_group_invitation` - delete_group_invitation
+
+        * `accept_group_invitation` - accept_group_invitation
+
+        * `reject_group_invitation` - reject_group_invitation
+
+        * `update_group_invitation_permissions` - update_group_invitation_permissions
+
+        * `leave_group` - leave_group
+
+        * `create_initial_workspace` - create_initial_workspace
+
+        * `export_applications` - export_applications
+
+        * `import_applications` - import_applications
+
+        * `create_snapshot` - create_snapshot
+
+        * `delete_snapshot` - delete_snapshot
+
+        * `restore_snapshot` - restore_snapshot
+
+        * `empty_trash` - empty_trash
+
+        * `restore_from_trash` - restore_from_trash
+
+        * `create_user` - create_user
+
+        * `update_user` - update_user
+
+        * `schedule_user_deletion` - schedule_user_deletion
+
+        * `cancel_user_deletion` - cancel_user_deletion
+
+        * `sign_in_user` - sign_in_user
+
+        * `change_user_password` - change_user_password
+
+        * `send_reset_user_password` - send_reset_user_password
+
+        * `reset_user_password` - reset_user_password
+
+        * `send_verify_email` - send_verify_email
+
+        * `verify_email` - verify_email
+
+        * `create_db_token` - create_db_token
+
+        * `update_db_token_name` - update_db_token_name
+
+        * `update_db_token_permissions` - update_db_token_permissions
+
+        * `rotate_db_token_key` - rotate_db_token_key
+
+        * `delete_db_token_key` - delete_db_token_key
+
+        * `create_webhook` - create_webhook
+
+        * `delete_webhook` - delete_webhook
+
+        * `update_webhook` - update_webhook
+
+        * `export_table` - export_table
+
+        * `import_database_from_airtable` - import_database_from_airtable
+
+        * `create_table` - create_table
+
+        * `delete_table` - delete_table
+
+        * `order_tables` - order_tables
+
+        * `update_table` - update_table
+
+        * `duplicate_table` - duplicate_table
+
+        * `create_row` - create_row
+
+        * `create_rows` - create_rows
+
+        * `import_rows` - import_rows
+
+        * `delete_row` - delete_row
+
+        * `delete_rows` - delete_rows
+
+        * `move_row` - move_row
+
+        * `update_row` - update_row
+
+        * `update_rows` - update_rows
+
+        * `create_view` - create_view
+
+        * `duplicate_view` - duplicate_view
+
+        * `delete_view` - delete_view
+
+        * `order_views` - order_views
+
+        * `update_view` - update_view
+
+        * `create_view_filter` - create_view_filter
+
+        * `update_view_filter` - update_view_filter
+
+        * `delete_view_filter` - delete_view_filter
+
+        * `create_view_sort` - create_view_sort
+
+        * `update_view_sort` - update_view_sort
+
+        * `delete_view_sort` - delete_view_sort
+
+        * `create_view_group` - create_view_group
+
+        * `update_view_group` - update_view_group
+
+        * `delete_view_group` - delete_view_group
+
+        * `submit_form` - submit_form
+
+        * `rotate_view_slug` - rotate_view_slug
+
+        * `update_view_field_options` - update_view_field_options
+
+        * `create_decoration` - create_decoration
+
+        * `update_decoration` - update_decoration
+
+        * `delete_decoration` - delete_decoration
+
+        * `create_view_filter_group` - create_view_filter_group
+
+        * `update_view_filter_group` - update_view_filter_group
+
+        * `delete_view_filter_group` - delete_view_filter_group
+
+        * `create_data_sync_table` - create_data_sync_table
+
+        * `update_data_sync_table` - update_data_sync_table
+
+        * `sync_data_sync_table` - sync_data_sync_table
+
+        * `create_field` - create_field
+
+        * `delete_field` - delete_field
+
+        * `update_field` - update_field
+
+        * `duplicate_field` - duplicate_field
+
+        * `change_primary_field` - change_primary_field
+
+        * `create_widget` - create_widget
+
+        * `update_widget` - update_widget
+
+        * `delete_widget` - delete_widget
+
+        * `update_dashboard_data_source` - update_dashboard_data_source
+
+        * `generate_formula_with_ai` - generate_formula_with_ai
+
+        * `create_row_comment` - create_row_comment
+
+        * `delete_row_comment` - delete_row_comment
+
+        * `update_row_comment` - update_row_comment
+
+        * `rotate_calendar_ical_view_slug` - rotate_calendar_ical_view_slug
+
+        * `create_team` - create_team
+
+        * `update_team` - update_team
+
+        * `delete_team` - delete_team
+
+        * `create_team_subject` - create_team_subject
+
+        * `delete_team_subject` - delete_team_subject
+
+        * `batch_assign_role` - batch_assign_role
+
+        * `update_periodic_data_sync_interval` - update_periodic_data_sync_interval'
+    ExportCharsetEnum:
+      enum:
+      - utf-8
+      - iso-8859-6
+      - windows-1256
+      - iso-8859-4
+      - windows-1257
+      - iso-8859-14
+      - iso-8859-2
+      - windows-1250
+      - gbk
+      - gb18030
+      - big5
+      - koi8-r
+      - koi8-u
+      - iso-8859-5
+      - windows-1251
+      - x-mac-cyrillic
+      - iso-8859-7
+      - windows-1253
+      - iso-8859-8
+      - windows-1255
+      - euc-jp
+      - iso-2022-jp
+      - shift-jis
+      - euc-kr
+      - macintosh
+      - iso-8859-10
+      - iso-8859-16
+      - windows-874
+      - windows-1254
+      - windows-1258
+      - iso-8859-1
+      - windows-1252
+      - iso-8859-3
+      type: string
+      description: '* `utf-8` - utf-8
+
+        * `iso-8859-6` - iso-8859-6
+
+        * `windows-1256` - windows-1256
+
+        * `iso-8859-4` - iso-8859-4
+
+        * `windows-1257` - windows-1257
+
+        * `iso-8859-14` - iso-8859-14
+
+        * `iso-8859-2` - iso-8859-2
+
+        * `windows-1250` - windows-1250
+
+        * `gbk` - gbk
+
+        * `gb18030` - gb18030
+
+        * `big5` - big5
+
+        * `koi8-r` - koi8-r
+
+        * `koi8-u` - koi8-u
+
+        * `iso-8859-5` - iso-8859-5
+
+        * `windows-1251` - windows-1251
+
+        * `x-mac-cyrillic` - mac-cyrillic
+
+        * `iso-8859-7` - iso-8859-7
+
+        * `windows-1253` - windows-1253
+
+        * `iso-8859-8` - iso-8859-8
+
+        * `windows-1255` - windows-1255
+
+        * `euc-jp` - euc-jp
+
+        * `iso-2022-jp` - iso-2022-jp
+
+        * `shift-jis` - shift-jis
+
+        * `euc-kr` - euc-kr
+
+        * `macintosh` - macintosh
+
+        * `iso-8859-10` - iso-8859-10
+
+        * `iso-8859-16` - iso-8859-16
+
+        * `windows-874` - cp874
+
+        * `windows-1254` - windows-1254
+
+        * `windows-1258` - windows-1258
+
+        * `iso-8859-1` - iso-8859-1
+
+        * `windows-1252` - windows-1252
+
+        * `iso-8859-3` - iso-8859-3'
+    CsvColumnSeparatorEnum:
+      enum:
+      - ','
+      - ;
+      - '|'
+      - tab
+      - record_separator
+      - unit_separator
+      type: string
+      description: "* `,` - ,\n* `;` - ;\n* `|` - |\n* `tab` - \t\n* `record_separator` - \x1E\n* `unit_separator`\
+        \ - \x1F"
+    Snapshot:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 160
+        snapshot_from_application:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - id
+      - name
+      - snapshot_from_application
+    Field:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        table_id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Lowest first.
+        type:
+          type: string
+          readOnly: true
+          description: The type of the related field.
+        primary:
+          type: boolean
+          description: Indicates if the field is a primary field. If `true` the field cannot be deleted
+            and the value should represent the whole row.
+        read_only:
+          type: boolean
+          readOnly: true
+          description: Indicates whether the field is a read only field. If true, it's not possible to
+            update the cell value.
+        immutable_type:
+          type: boolean
+          readOnly: true
+          nullable: true
+          description: Indicates whether the field type is immutable. If true, then it won't be possible
+            to change the field type via the API.
+        immutable_properties:
+          type: boolean
+          readOnly: true
+          nullable: true
+          description: Indicates whether the field properties are immutable. If true, then it won't be
+            possible to change the properties and the type via the API.
+        description:
+          type: string
+          nullable: true
+          description: Field description
+      required:
+      - id
+      - immutable_properties
+      - immutable_type
+      - name
+      - order
+      - read_only
+      - table_id
+      - type
+    FieldSerializerWithRelatedFields:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        table_id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Lowest first.
+        type:
+          type: string
+          readOnly: true
+          description: The type of the related field.
+        primary:
+          type: boolean
+          description: Indicates if the field is a primary field. If `true` the field cannot be deleted
+            and the value should represent the whole row.
+        read_only:
+          type: boolean
+          readOnly: true
+          description: Indicates whether the field is a read only field. If true, it's not possible to
+            update the cell value.
+        immutable_type:
+          type: boolean
+          readOnly: true
+          nullable: true
+          description: Indicates whether the field type is immutable. If true, then it won't be possible
+            to change the field type via the API.
+        immutable_properties:
+          type: boolean
+          readOnly: true
+          nullable: true
+          description: Indicates whether the field properties are immutable. If true, then it won't be
+            possible to change the properties and the type via the API.
+        description:
+          type: string
+          nullable: true
+          description: Field description
+        related_fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          readOnly: true
+          description: A list of related fields which also changed.
+      required:
+      - id
+      - immutable_properties
+      - immutable_type
+      - name
+      - order
+      - read_only
+      - related_fields
+      - table_id
+      - type
+    ApplicationApplication:
+      oneOf:
+      - $ref: '#/components/schemas/DatabaseApplication'
+      - $ref: '#/components/schemas/BuilderApplication'
+      - $ref: '#/components/schemas/DashboardApplication'
+      discriminator:
+        propertyName: type
+        mapping:
+          database: '#/components/schemas/DatabaseApplication'
+          builder: '#/components/schemas/BuilderApplication'
+          dashboard: '#/components/schemas/DashboardApplication'
+    Page:
+      type: object
+      description: '👉 Mind to update the
+
+        baserow.contrib.builder.api.domains.serializer.PublicPageSerializer
+
+        when you update this one.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        path:
+          type: string
+          maxLength: 255
+        path_params:
+          type: array
+          items:
+            $ref: '#/components/schemas/PathParam'
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Lowest first.
+        builder_id:
+          type: integer
+          readOnly: true
+        shared:
+          type: boolean
+          readOnly: true
+        visibility:
+          allOf:
+          - $ref: '#/components/schemas/VisibilityC5fEnum'
+          readOnly: true
+          description: 'Controls the page''s visibility. When set to ''logged-in'', the builder''s login_page
+            must also be set.
+
+
+            * `all` - All
+
+            * `logged-in` - Logged In'
+        role_type:
+          allOf:
+          - $ref: '#/components/schemas/RoleTypeEnum'
+          readOnly: true
+          description: 'Role type is used in conjunction with roles to control access to this page.
+
+
+            * `allow_all` - Allow All
+
+            * `allow_all_except` - Allow All Except
+
+            * `disallow_all_except` - Disallow All Except'
+        roles:
+          readOnly: true
+          description: List of user roles that are associated with this page. Used in conjunction with
+            role_type.
+        query_params:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryParam'
+      required:
+      - builder_id
+      - id
+      - name
+      - order
+      - path
+      - role_type
+      - roles
+      - shared
+      - visibility
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 165
+        generative_ai_models_enabled:
+          type: string
+          readOnly: true
+      required:
+      - generative_ai_models_enabled
+      - id
+      - name
+    Template:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 64
+        slug:
+          type: string
+          description: The template slug that is used to match the template with the JSON file name.
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        icon:
+          type: string
+          description: The icon class name that can be used for displaying purposes.
+          maxLength: 32
+        keywords:
+          type: string
+          description: Keywords related to the template that can be used for search.
+        workspace_id:
+          type: integer
+          nullable: true
+          description: The group containing the applications related to the template. The read endpoints
+            related to that group are publicly accessible for preview purposes.
+          readOnly: true
+        is_default:
+          type: string
+          readOnly: true
+          description: Indicates if the template must be selected by default. The web-frontend automatically
+            selects the first `is_default` template that it can find.
+        open_application:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description: The application ID that must be opened when the template is previewed. If null,
+            then the first will automatically be chosen.
+      required:
+      - icon
+      - id
+      - is_default
+      - name
+      - slug
+      - workspace_id
+    Table:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Lowest first.
+        database_id:
+          type: integer
+          readOnly: true
+        data_sync:
+          $ref: '#/components/schemas/DataSync'
+      required:
+      - data_sync
+      - database_id
+      - id
+      - name
+      - order
+    Report:
+      type: object
+      properties:
+        failing_rows:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                type: string
+              description: Error messages for this field.
+            description: An object containing error messages by fields. The key is the field name and
+              the value is an array of error messages for this field. These messages are localized for
+              the user who has created the job when the translation is available.
+          description: An object containing field in error by rows. The keys are the row indexes from
+            original file and values are objects of errors by fields.
+      required:
+      - failing_rows
+    DataSync:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+        synced_properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSyncSyncedProperty'
+        last_sync:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when the table was last synced.
+        last_error:
+          type: string
+          nullable: true
+      required:
+      - id
+      - synced_properties
+      - type
+    ImportResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        size:
+          type: integer
+          maximum: 9223372036854776000
+          minimum: 0
+          format: int64
+          description: The size of the resource in bytes.
+      required:
+      - id
+      - name
+    User:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+      required:
+      - username
+    DatabaseApplication:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 160
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        type:
+          type: string
+          readOnly: true
+        workspace:
+          allOf:
+          - $ref: '#/components/schemas/Workspace'
+          description: The workspace that the application belongs to.
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/Table'
+          readOnly: true
+          description: This field is specific to the `database` application and contains an array of tables
+            that are in the database.
+      required:
+      - created_on
+      - id
+      - name
+      - order
+      - tables
+      - type
+      - workspace
+    BuilderApplication:
+      type: object
+      description: 'The builder serializer.
+
+
+        👉 Mind to update the
+
+        baserow.contrib.builder.api.domains.serializer.PublicBuilderSerializer
+
+        when you update this one.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 160
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        type:
+          type: string
+          readOnly: true
+        workspace:
+          allOf:
+          - $ref: '#/components/schemas/Workspace'
+          description: The workspace that the application belongs to.
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+        pages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Page'
+          readOnly: true
+          description: This field is specific to the `builder` application and contains an array of pages
+            that are in the builder.
+        theme:
+          allOf:
+          - $ref: '#/components/schemas/ColorTypographyButtonImagePageInputTableLinklink_active_text_decoration'
+          readOnly: true
+          description: This field is specific to the `builder` application and contains the theme settings.
+        favicon_file:
+          allOf:
+          - $ref: '#/components/schemas/UserFile'
+          nullable: true
+          description: The favicon image file
+        login_page_id:
+          type: integer
+          nullable: true
+      required:
+      - created_on
+      - id
+      - name
+      - order
+      - pages
+      - theme
+      - type
+      - workspace
+    DashboardApplication:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 160
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        type:
+          type: string
+          readOnly: true
+        workspace:
+          allOf:
+          - $ref: '#/components/schemas/Workspace'
+          description: The workspace that the application belongs to.
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+        description:
+          type: string
+      required:
+      - created_on
+      - id
+      - name
+      - order
+      - type
+      - workspace
+    RoleTypeEnum:
+      enum:
+      - allow_all
+      - allow_all_except
+      - disallow_all_except
+      type: string
+      description: '* `allow_all` - Allow All
+
+        * `allow_all_except` - Allow All Except
+
+        * `disallow_all_except` - Disallow All Except'
+    QueryParam:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the parameter.
+          maxLength: 255
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeD08Enum'
+          description: 'The type of the parameter.
+
+
+            * `text` - text
+
+            * `numeric` - numeric'
+      required:
+      - name
+      - type
+    PathParam:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the parameter.
+          maxLength: 255
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeD08Enum'
+          description: 'The type of the parameter.
+
+
+            * `text` - text
+
+            * `numeric` - numeric'
+      required:
+      - name
+      - type
+    VisibilityC5fEnum:
+      enum:
+      - all
+      - logged-in
+      type: string
+      description: '* `all` - All
+
+        * `logged-in` - Logged In'
+    DataSyncSyncedProperty:
+      type: object
+      properties:
+        field_id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          description: The matching `key` of the `DataSyncProperty`.
+          maxLength: 255
+        unique_primary:
+          type: boolean
+          description: Indicates whether the data sync property is used for unique identification when
+            syncing.
+      required:
+      - field_id
+      - key
+    UserFile:
+      type: object
+      properties:
+        size:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        mime_type:
+          type: string
+          maxLength: 127
+        is_image:
+          type: boolean
+        image_width:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        image_height:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+        url:
+          type: string
+          format: uri
+          readOnly: true
+        thumbnails:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        original_name:
+          type: string
+          maxLength: 255
+      required:
+      - name
+      - original_name
+      - size
+      - thumbnails
+      - uploaded_at
+      - url
+    ColorTypographyButtonImagePageInputTableLinklink_active_text_decoration:
+      type: object
+      properties:
+        primary_color:
+          type: string
+          maxLength: 255
+        secondary_color:
+          type: string
+          maxLength: 255
+        border_color:
+          type: string
+          maxLength: 255
+        main_success_color:
+          type: string
+          maxLength: 255
+        main_warning_color:
+          type: string
+          maxLength: 255
+        main_error_color:
+          type: string
+          maxLength: 255
+        custom_colors: {}
+        heading_1_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        heading_2_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        heading_3_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        heading_4_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        heading_5_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        heading_6_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Text decoration: [underline, stroke, uppercase, italic]'
+        body_font_family:
+          type: string
+          maxLength: 250
+        body_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        body_font_weight:
+          $ref: '#/components/schemas/BodyFontWeightEnum'
+        body_text_color:
+          type: string
+          maxLength: 255
+        body_text_alignment:
+          $ref: '#/components/schemas/BodyTextAlignmentEnum'
+        heading_1_font_family:
+          type: string
+          maxLength: 250
+        heading_1_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_1_font_weight:
+          $ref: '#/components/schemas/Heading1FontWeightEnum'
+        heading_1_text_color:
+          type: string
+          maxLength: 255
+        heading_1_text_alignment:
+          $ref: '#/components/schemas/Heading1TextAlignmentEnum'
+        heading_2_font_family:
+          type: string
+          maxLength: 250
+        heading_2_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_2_font_weight:
+          $ref: '#/components/schemas/Heading2FontWeightEnum'
+        heading_2_text_color:
+          type: string
+          maxLength: 255
+        heading_2_text_alignment:
+          $ref: '#/components/schemas/Heading2TextAlignmentEnum'
+        heading_3_font_family:
+          type: string
+          maxLength: 250
+        heading_3_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_3_font_weight:
+          $ref: '#/components/schemas/Heading3FontWeightEnum'
+        heading_3_text_color:
+          type: string
+          maxLength: 255
+        heading_3_text_alignment:
+          $ref: '#/components/schemas/Heading3TextAlignmentEnum'
+        heading_4_font_family:
+          type: string
+          maxLength: 250
+        heading_4_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_4_font_weight:
+          $ref: '#/components/schemas/Heading4FontWeightEnum'
+        heading_4_text_color:
+          type: string
+          maxLength: 255
+        heading_4_text_alignment:
+          $ref: '#/components/schemas/Heading4TextAlignmentEnum'
+        heading_5_font_family:
+          type: string
+          maxLength: 250
+        heading_5_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_5_font_weight:
+          $ref: '#/components/schemas/Heading5FontWeightEnum'
+        heading_5_text_color:
+          type: string
+          maxLength: 255
+        heading_5_text_alignment:
+          $ref: '#/components/schemas/Heading5TextAlignmentEnum'
+        heading_6_font_family:
+          type: string
+          maxLength: 250
+        heading_6_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        heading_6_font_weight:
+          $ref: '#/components/schemas/Heading6FontWeightEnum'
+        heading_6_text_color:
+          type: string
+          maxLength: 255
+        heading_6_text_alignment:
+          $ref: '#/components/schemas/Heading6TextAlignmentEnum'
+        button_font_family:
+          type: string
+          maxLength: 250
+        button_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        button_font_weight:
+          $ref: '#/components/schemas/ButtonFontWeightEnum'
+        button_alignment:
+          $ref: '#/components/schemas/ButtonAlignmentEnum'
+        button_text_alignment:
+          $ref: '#/components/schemas/ButtonTextAlignmentEnum'
+        button_width:
+          $ref: '#/components/schemas/ButtonWidthEnum'
+        button_background_color:
+          type: string
+          description: The background color of buttons
+          maxLength: 255
+        button_text_color:
+          type: string
+          description: The text color of buttons
+          maxLength: 255
+        button_border_color:
+          type: string
+          description: The border color of buttons
+          maxLength: 255
+        button_border_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Button border size
+        button_border_radius:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Button border radius
+        button_vertical_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Button vertical padding
+        button_horizontal_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Button horizontal padding
+        button_hover_background_color:
+          type: string
+          description: The background color of buttons when hovered
+          maxLength: 255
+        button_hover_text_color:
+          type: string
+          description: The text color of buttons when hovered
+          maxLength: 255
+        button_hover_border_color:
+          type: string
+          description: The border color of buttons when hovered
+          maxLength: 255
+        button_active_background_color:
+          type: string
+          description: The background color of buttons when active
+          maxLength: 255
+        button_active_text_color:
+          type: string
+          description: The text color of buttons when active
+          maxLength: 255
+        button_active_border_color:
+          type: string
+          description: The border color of buttons when active
+          maxLength: 255
+        image_max_height:
+          type: integer
+          description: The image max height
+        image_alignment:
+          $ref: '#/components/schemas/ImageAlignmentEnum'
+        image_max_width:
+          type: integer
+          maximum: 100
+          minimum: 0
+          description: The max-width for this image element.
+        image_border_radius:
+          type: integer
+          maximum: 100
+          minimum: 0
+          description: The border radius for this image element.
+        image_constraint:
+          allOf:
+          - $ref: '#/components/schemas/ImageConstraintEnum'
+          description: 'The image constraint to apply to this image
+
+
+            * `cover` - Cover
+
+            * `contain` - Contain
+
+            * `full-width` - Full Width'
+        page_background_file:
+          allOf:
+          - $ref: '#/components/schemas/UserFile'
+          nullable: true
+          description: The image file
+        page_background_color:
+          type: string
+          description: The background color of the page
+          maxLength: 255
+        page_background_mode:
+          allOf:
+          - $ref: '#/components/schemas/PageBackgroundModeEnum'
+          description: 'The mode of the background image
+
+
+            * `tile` - Tile
+
+            * `fill` - Fill
+
+            * `fit` - Fit'
+        label_font_family:
+          type: string
+          description: The font family of the label
+          maxLength: 250
+        label_text_color:
+          type: string
+          description: The text color of the label
+          maxLength: 255
+        label_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: The font size of the label
+        label_font_weight:
+          $ref: '#/components/schemas/LabelFontWeightEnum'
+        input_font_family:
+          type: string
+          description: The font family of the input
+          maxLength: 250
+        input_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        input_font_weight:
+          $ref: '#/components/schemas/InputFontWeightEnum'
+        input_text_color:
+          type: string
+          description: The text color of the input
+          maxLength: 255
+        input_background_color:
+          type: string
+          description: The background color of the input
+          maxLength: 255
+        input_border_color:
+          type: string
+          description: The color of the input border
+          maxLength: 255
+        input_border_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Input border size
+        input_border_radius:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Input border radius
+        input_vertical_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Input vertical padding
+        input_horizontal_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Input horizontal padding
+        table_border_color:
+          type: string
+          description: The color of the table border
+          maxLength: 255
+        table_border_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table border size
+        table_border_radius:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table border radius
+        table_header_background_color:
+          type: string
+          description: The background color of the table header cells
+          maxLength: 255
+        table_header_text_color:
+          type: string
+          description: The text color of the table header cells
+          maxLength: 255
+        table_header_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: The font size of the header cells
+        table_header_font_weight:
+          $ref: '#/components/schemas/TableHeaderFontWeightEnum'
+        table_header_font_family:
+          type: string
+          description: The font family of the table header cells
+          maxLength: 250
+        table_header_text_alignment:
+          $ref: '#/components/schemas/TableHeaderTextAlignmentEnum'
+        table_cell_background_color:
+          type: string
+          description: The background color of the table cells
+          maxLength: 255
+        table_cell_alternate_background_color:
+          type: string
+          description: The alternate background color of the table cells
+          maxLength: 255
+        table_cell_alignment:
+          $ref: '#/components/schemas/TableCellAlignmentEnum'
+        table_cell_vertical_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table cell vertical padding
+        table_cell_horizontal_padding:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table cell horizontal padding
+        table_vertical_separator_color:
+          type: string
+          description: The color of the table vertical separator
+          maxLength: 255
+        table_vertical_separator_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table vertical separator size
+        table_horizontal_separator_color:
+          type: string
+          description: The color of the table horizontal separator
+          maxLength: 255
+        table_horizontal_separator_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+          description: Table horizontal separator size
+        link_default_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Default text decoration: [underline, stroke, uppercase, italic]'
+        link_hover_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Hover text decoration: [underline, stroke, uppercase, italic]'
+        link_active_text_decoration:
+          type: array
+          items:
+            type: boolean
+          description: 'Active text decoration: [underline, stroke, uppercase, italic]'
+        link_font_family:
+          type: string
+          maxLength: 250
+        link_font_size:
+          type: integer
+          maximum: 32767
+          minimum: -32768
+        link_font_weight:
+          $ref: '#/components/schemas/LinkFontWeightEnum'
+        link_text_alignment:
+          $ref: '#/components/schemas/LinkTextAlignmentEnum'
+        link_text_color:
+          type: string
+          description: The text color of links
+          maxLength: 255
+        link_hover_text_color:
+          type: string
+          description: The hover color of links when hovered
+          maxLength: 255
+        link_active_text_color:
+          type: string
+          description: The hover color of links when active
+          maxLength: 255
+    TypeD08Enum:
+      enum:
+      - text
+      - numeric
+      type: string
+      description: '* `text` - text
+
+        * `numeric` - numeric'
+    ButtonWidthEnum:
+      enum:
+      - auto
+      - full
+      type: string
+      description: '* `auto` - Auto
+
+        * `full` - Full'
+    InputFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    ImageConstraintEnum:
+      enum:
+      - cover
+      - contain
+      - full-width
+      type: string
+      description: '* `cover` - Cover
+
+        * `contain` - Contain
+
+        * `full-width` - Full Width'
+    Heading4TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    ButtonAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    ImageAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    BodyFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    Heading4FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    LabelFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    Heading3FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    Heading2FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    PageBackgroundModeEnum:
+      enum:
+      - tile
+      - fill
+      - fit
+      type: string
+      description: '* `tile` - Tile
+
+        * `fill` - Fill
+
+        * `fit` - Fit'
+    Heading1FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    ButtonFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    Heading2TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    ButtonTextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    TableHeaderFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    BodyTextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    TableCellAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    TableHeaderTextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    LinkTextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    Heading6TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    Heading5TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    Heading6FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    Heading3TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    Heading1TextAlignmentEnum:
+      enum:
+      - left
+      - center
+      - right
+      type: string
+      description: '* `left` - Left
+
+        * `center` - Center
+
+        * `right` - Right'
+    Heading5FontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+    LinkFontWeightEnum:
+      enum:
+      - thin
+      - extra-light
+      - light
+      - regular
+      - medium
+      - semi-bold
+      - bold
+      - extra-bold
+      - heavy
+      - black
+      - extra-black
+      type: string
+      description: '* `thin` - Thin
+
+        * `extra-light` - Extra Light
+
+        * `light` - Light
+
+        * `regular` - Regular
+
+        * `medium` - Medium
+
+        * `semi-bold` - Semi Bold
+
+        * `bold` - Bold
+
+        * `extra-bold` - Extra Bold
+
+        * `heavy` - Heavy
+
+        * `black` - Black
+
+        * `extra-black` - Extra Black'
+tags:
+- name: Jobs

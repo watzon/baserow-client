@@ -1,0 +1,177 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/user-files/upload-file/:
+    post:
+      operationId: upload_file
+      description: Uploads a file to Baserow by uploading the file contents directly. A `file` multipart
+        is expected containing the file contents.
+      tags:
+      - User files
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      - Database token: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserFile'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_INVALID_FILE
+                    - ERROR_FILE_SIZE_TOO_LARGE
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/user-files/upload-via-url/:
+    post:
+      operationId: upload_via_url
+      description: Uploads a file to Baserow by downloading it from the provided URL.
+      tags:
+      - User files
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserFileUploadViaURLRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserFileUploadViaURLRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserFileUploadViaURLRequest'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      - Database token: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserFile'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_INVALID_FILE
+                    - ERROR_FILE_SIZE_TOO_LARGE
+                    - ERROR_FILE_URL_COULD_NOT_BE_REACHED
+                    - ERROR_INVALID_FILE_URL
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  schemas:
+    UserFile:
+      type: object
+      properties:
+        size:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        mime_type:
+          type: string
+          maxLength: 127
+        is_image:
+          type: boolean
+        image_width:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        image_height:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+        url:
+          type: string
+          format: uri
+          readOnly: true
+        thumbnails:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        original_name:
+          type: string
+          maxLength: 255
+      required:
+      - name
+      - original_name
+      - size
+      - thumbnails
+      - uploaded_at
+      - url
+    UserFileUploadViaURLRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+      required:
+      - url
+  securitySchemes:
+    Database token:
+      type: http
+      scheme: bearer
+      bearerFormat: Token your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags:
+- name: User files

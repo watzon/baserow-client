@@ -1,0 +1,205 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/data-sync/{data_sync_id}/periodic-interval/:
+    get:
+      operationId: get_periodic_data_sync_interval
+      description: 'Responds with the periodic data sync interval data, if the user has the right permissions.
+
+        This is an **enterprise** feature.'
+      parameters:
+      - in: path
+        name: data_sync_id
+        schema:
+          type: integer
+        description: The data sync where to fetch the periodic settings for.
+        required: true
+      tags:
+      - Database tables
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PeriodicDataSyncInterval'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_DATA_SYNC_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    patch:
+      operationId: update_periodic_data_sync_interval
+      description: 'Updates the periodic data sync interval, if the user has the right permissions.
+
+        This is an **enterprise** feature.'
+      parameters:
+      - in: path
+        name: data_sync_id
+        schema:
+          type: integer
+        description: Updates the data sync related to the provided value.
+        required: true
+      tags:
+      - Database tables
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPeriodicDataSyncInterval'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPeriodicDataSyncInterval'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPeriodicDataSyncInterval'
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PeriodicDataSyncInterval'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_DATA_SYNC_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+  schemas:
+    PeriodicDataSyncInterval:
+      type: object
+      properties:
+        interval:
+          $ref: '#/components/schemas/IntervalEnum'
+        when:
+          type: string
+          format: time
+        automatically_deactivated:
+          type: boolean
+          readOnly: true
+          description: Indicates whether the periodic data sync has been deactivated.
+      required:
+      - automatically_deactivated
+      - when
+    PatchedPeriodicDataSyncInterval:
+      type: object
+      properties:
+        interval:
+          $ref: '#/components/schemas/IntervalEnum'
+        when:
+          type: string
+          format: time
+        automatically_deactivated:
+          type: boolean
+          readOnly: true
+          description: Indicates whether the periodic data sync has been deactivated.
+    IntervalEnum:
+      enum:
+      - MANUAL
+      - DAILY
+      - HOURLY
+      type: string
+      description: '* `MANUAL` - MANUAL
+
+        * `DAILY` - DAILY
+
+        * `HOURLY` - HOURLY'
+tags:
+- name: Database tables

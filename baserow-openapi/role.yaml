@@ -1,0 +1,617 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/role/{workspace_id}/:
+    get:
+      operationId: list_role_assignments
+      description: You can list the role assignments within a workspace, optionally filtered downto a
+        specific scope inside of that workspace. If the scope isn't specified,the workspace will be considered
+        the scope.
+      parameters:
+      - in: query
+        name: scope_id
+        schema:
+          type: integer
+        description: The id of the scope you are trying to get all roleassignments for.
+      - in: query
+        name: scope_type
+        schema:
+          type: string
+        description: The type of scope you are trying to get all roleassignments for.
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: The workspace in which the role assignments are related to.
+        required: true
+      tags:
+      - Role assignments
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OpenApiRoleAssignment'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_REQUEST_BODY_VALIDATION
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_SCOPE_DOES_NOT_EXIST
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                    - ERROR_OBJECT_SCOPE_TYPE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    post:
+      operationId: assign_role
+      description: You can assign a role to a subject into the given workspace for the given scope with
+        this endpoint. If you want to remove the role you can omit the role property.
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: The workspace in which the role assignment takes place.
+        required: true
+      tags:
+      - Role assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoleAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateRoleAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateRoleAssignment'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenApiRoleAssignment'
+          description: ''
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_REQUEST_BODY_VALIDATION
+                    - ERROR_CANT_ASSIGN_ROLE_EXCEPTION_TO_ADMIN
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_SCOPE_DOES_NOT_EXIST
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                    - ERROR_OBJECT_SCOPE_TYPE_DOES_NOT_EXIST
+                    - ERROR_SUBJECT_TYPE_DOES_NOT_EXIST
+                    - ERROR_ROLE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/role/{workspace_id}/batch/:
+    post:
+      operationId: batch_assign_role
+      description: You can assign a role to a multiple subjects into the given workspace for the given
+        scopes with this endpoint. If you want to remove the role you can omit the role property.
+      parameters:
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: The workspace in which the role assignment takes place.
+        required: true
+      tags:
+      - Role assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchCreateRoleAssignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BatchCreateRoleAssignment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BatchCreateRoleAssignment'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OpenApiRoleAssignment'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_REQUEST_BODY_VALIDATION
+                    - ERROR_DUPLICATE_ROLE_ASSIGNMENTS
+                    - ERROR_CANT_ASSIGN_ROLE_EXCEPTION_TO_ADMIN
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_SCOPE_DOES_NOT_EXIST
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                    - ERROR_OBJECT_SCOPE_TYPE_DOES_NOT_EXIST
+                    - ERROR_SUBJECT_TYPE_DOES_NOT_EXIST
+                    - ERROR_ROLE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  schemas:
+    BatchCreateRoleAssignment:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateRoleAssignment'
+      required:
+      - items
+    CreateRoleAssignment:
+      type: object
+      description: The create role assignment serializer.
+      properties:
+        subject_id:
+          type: integer
+          minimum: 1
+          description: The subject ID. A subject is an actor that can do operations.
+        subject_type:
+          allOf:
+          - $ref: '#/components/schemas/SubjectType398Enum'
+          description: 'The subject type.
+
+
+            * `auth.User` - auth.User
+
+            * `anonymous` - anonymous
+
+            * `user_source.user` - user_source.user
+
+            * `core.Token` - core.Token
+
+            * `baserow_enterprise.Team` - baserow_enterprise.Team'
+        role:
+          type: string
+          nullable: true
+          description: The uid of the role you want to assign to the user or team in the given workspace.
+            You can omit this property if you want to remove the role.
+        scope_id:
+          type: integer
+          minimum: 1
+          description: The ID of the scope object. The scope object limit the role assignment to this
+            scope and all its descendants.
+        scope_type:
+          allOf:
+          - $ref: '#/components/schemas/ScopeTypeEnum'
+          description: 'The scope object type.
+
+
+            * `core` - core
+
+            * `application` - application
+
+            * `workspace` - workspace
+
+            * `workspace_invitation` - workspace_invitation
+
+            * `snapshot` - snapshot
+
+            * `workspace_user` - workspace_user
+
+            * `integration` - integration
+
+            * `user_source` - user_source
+
+            * `database` - database
+
+            * `database_table` - database_table
+
+            * `database_field` - database_field
+
+            * `database_view` - database_view
+
+            * `database_view_decoration` - database_view_decoration
+
+            * `database_view_sort` - database_view_sort
+
+            * `database_view_group` - database_view_group
+
+            * `database_view_filter` - database_view_filter
+
+            * `database_view_filter_group` - database_view_filter_group
+
+            * `token` - token
+
+            * `builder` - builder
+
+            * `builder_page` - builder_page
+
+            * `builder_element` - builder_element
+
+            * `builder_domain` - builder_domain
+
+            * `builder_data_source` - builder_data_source
+
+            * `builder_workflow_action` - builder_workflow_action
+
+            * `dashboard` - dashboard
+
+            * `dashboard_data_source` - dashboard_data_source
+
+            * `dashboard_widget` - dashboard_widget
+
+            * `team` - team
+
+            * `team_subject` - team_subject
+
+            * `license` - license'
+      required:
+      - role
+      - scope_id
+      - scope_type
+      - subject_id
+      - subject_type
+    OpenApiRoleAssignment:
+      type: object
+      description: Serializer for RoleAssignment used for the Open API spec
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        role:
+          type: string
+          description: The uid of the role assigned to the user or team in the given workspace.
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/OpenApiSubjectField'
+          description: The structure of the subject field depends on the subject typereturned and will
+            have additional fields accordingly
+        subject_id:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: The subject ID.
+        scope_id:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: The unique scope ID.
+        subject_type:
+          allOf:
+          - $ref: '#/components/schemas/SubjectType398Enum'
+          description: 'The subject type.
+
+
+            * `auth.User` - auth.User
+
+            * `anonymous` - anonymous
+
+            * `user_source.user` - user_source.user
+
+            * `core.Token` - core.Token
+
+            * `baserow_enterprise.Team` - baserow_enterprise.Team'
+        scope_type:
+          allOf:
+          - $ref: '#/components/schemas/ScopeTypeEnum'
+          description: 'The type of the scope object. The scope object limit the role assignment to this
+            scope and all its descendants.
+
+
+            * `core` - core
+
+            * `application` - application
+
+            * `workspace` - workspace
+
+            * `workspace_invitation` - workspace_invitation
+
+            * `snapshot` - snapshot
+
+            * `workspace_user` - workspace_user
+
+            * `integration` - integration
+
+            * `user_source` - user_source
+
+            * `database` - database
+
+            * `database_table` - database_table
+
+            * `database_field` - database_field
+
+            * `database_view` - database_view
+
+            * `database_view_decoration` - database_view_decoration
+
+            * `database_view_sort` - database_view_sort
+
+            * `database_view_group` - database_view_group
+
+            * `database_view_filter` - database_view_filter
+
+            * `database_view_filter_group` - database_view_filter_group
+
+            * `token` - token
+
+            * `builder` - builder
+
+            * `builder_page` - builder_page
+
+            * `builder_element` - builder_element
+
+            * `builder_domain` - builder_domain
+
+            * `builder_data_source` - builder_data_source
+
+            * `builder_workflow_action` - builder_workflow_action
+
+            * `dashboard` - dashboard
+
+            * `dashboard_data_source` - dashboard_data_source
+
+            * `dashboard_widget` - dashboard_widget
+
+            * `team` - team
+
+            * `team_subject` - team_subject
+
+            * `license` - license'
+      required:
+      - id
+      - role
+      - scope_id
+      - scope_type
+      - subject
+      - subject_id
+      - subject_type
+    ScopeTypeEnum:
+      enum:
+      - core
+      - application
+      - workspace
+      - workspace_invitation
+      - snapshot
+      - workspace_user
+      - integration
+      - user_source
+      - database
+      - database_table
+      - database_field
+      - database_view
+      - database_view_decoration
+      - database_view_sort
+      - database_view_group
+      - database_view_filter
+      - database_view_filter_group
+      - token
+      - builder
+      - builder_page
+      - builder_element
+      - builder_domain
+      - builder_data_source
+      - builder_workflow_action
+      - dashboard
+      - dashboard_data_source
+      - dashboard_widget
+      - team
+      - team_subject
+      - license
+      type: string
+      description: '* `core` - core
+
+        * `application` - application
+
+        * `workspace` - workspace
+
+        * `workspace_invitation` - workspace_invitation
+
+        * `snapshot` - snapshot
+
+        * `workspace_user` - workspace_user
+
+        * `integration` - integration
+
+        * `user_source` - user_source
+
+        * `database` - database
+
+        * `database_table` - database_table
+
+        * `database_field` - database_field
+
+        * `database_view` - database_view
+
+        * `database_view_decoration` - database_view_decoration
+
+        * `database_view_sort` - database_view_sort
+
+        * `database_view_group` - database_view_group
+
+        * `database_view_filter` - database_view_filter
+
+        * `database_view_filter_group` - database_view_filter_group
+
+        * `token` - token
+
+        * `builder` - builder
+
+        * `builder_page` - builder_page
+
+        * `builder_element` - builder_element
+
+        * `builder_domain` - builder_domain
+
+        * `builder_data_source` - builder_data_source
+
+        * `builder_workflow_action` - builder_workflow_action
+
+        * `dashboard` - dashboard
+
+        * `dashboard_data_source` - dashboard_data_source
+
+        * `dashboard_widget` - dashboard_widget
+
+        * `team` - team
+
+        * `team_subject` - team_subject
+
+        * `license` - license'
+    SubjectType398Enum:
+      enum:
+      - auth.User
+      - anonymous
+      - user_source.user
+      - core.Token
+      - baserow_enterprise.Team
+      type: string
+      description: '* `auth.User` - auth.User
+
+        * `anonymous` - anonymous
+
+        * `user_source.user` - user_source.user
+
+        * `core.Token` - core.Token
+
+        * `baserow_enterprise.Team` - baserow_enterprise.Team'
+    OpenApiSubjectField:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+      - id
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags: []

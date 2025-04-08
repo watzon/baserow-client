@@ -1,0 +1,764 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/teams/{team_id}/:
+    get:
+      operationId: get_team
+      description: Returns the information related to the provided team id.
+      parameters:
+      - in: path
+        name: team_id
+        schema:
+          type: integer
+        description: Returns the team related to the provided value.
+        required: true
+      tags:
+      - Teams
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TEAM_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    put:
+      operationId: update_team
+      description: Updates an existing team with a new name.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: path
+        name: team_id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - Teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Team'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Team'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Team'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_TEAM_NAME_NOT_UNIQUE
+                    - ERROR_SUBJECT_BAD_REQUEST"
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TEAM_DOES_NOT_EXIST
+                    - ERROR_SUBJECT_DOES_NOT_EXIST
+                    - ERROR_ROLE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    delete:
+      operationId: delete_team
+      description: Deletes a team if the authorized user is in the team's workspace. All the related children
+        (e.g. subjects) are also going to be deleted.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: path
+        name: team_id
+        schema:
+          type: integer
+        description: Deletes the team related to the provided value.
+        required: true
+      tags:
+      - Teams
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_CANNOT_DELETE_ALREADY_DELETED_ITEM
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TEAM_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/teams/{team_id}/subjects/:
+    get:
+      operationId: list_team_subjects
+      description: Lists all team subjects in a given team.
+      parameters:
+      - in: path
+        name: team_id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - Teams
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamSubjectResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TEAM_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    post:
+      operationId: create_subject
+      description: Creates a new team subject.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: path
+        name: team_id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - Teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamSubject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TeamSubject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TeamSubject'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamSubjectResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_SUBJECT_NOT_IN_GROUP
+                    - ERROR_SUBJECT_TYPE_UNSUPPORTED
+                    - ERROR_SUBJECT_BAD_REQUEST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TEAM_DOES_NOT_EXIST
+                    - ERROR_SUBJECT_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/teams/{team_id}/subjects/{subject_id}/:
+    get:
+      operationId: get_subject
+      description: Returns the information related to the provided subject id
+      parameters:
+      - in: path
+        name: subject_id
+        schema:
+          type: integer
+        description: Returns the subject related to the provided value.
+        required: true
+      - in: path
+        name: team_id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - Teams
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamSubjectResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TEAM_DOES_NOT_EXIST
+                    - ERROR_SUBJECT_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    delete:
+      operationId: delete_subject
+      description: Deletes a subject if the authorized user is in the team's workspace.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: path
+        name: subject_id
+        schema:
+          type: integer
+        description: The subject id to remove from the team.
+        required: true
+      - in: path
+        name: team_id
+        schema:
+          type: integer
+        description: The team id which the subject will be removed from.
+        required: true
+      tags:
+      - Teams
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_CANNOT_DELETE_ALREADY_DELETED_ITEM
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_TEAM_DOES_NOT_EXIST
+                    - ERROR_SUBJECT_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+  /api/teams/workspace/{workspace_id}/:
+    get:
+      operationId: workspace_list_teams
+      description: Lists all teams in a given workspace.
+      parameters:
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search for teams by their name.
+      - in: query
+        name: sorts
+        schema:
+          type: string
+        description: Sort teams by name or subjects.
+      - in: path
+        name: workspace_id
+        schema:
+          type: integer
+        description: Lists all teams in a given workspace.
+        required: true
+      tags:
+      - Teams
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+    post:
+      operationId: workspace_create_team
+      description: Creates a new team.
+      parameters:
+      - in: header
+        name: ClientSessionId
+        schema:
+          type: string
+          format: uuid
+        description: An optional header that marks the action performed by this request as having occurred
+          in a particular client session. Then using the undo/redo endpoints with the same ClientSessionId
+          header this action can be undone/redone.
+      - in: path
+        name: workspace_id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - Teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Team'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Team'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Team'
+        required: true
+      security:
+      - UserSource JWT: []
+      - JWT: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_USER_NOT_IN_GROUP
+                    - ERROR_SUBJECT_BAD_REQUEST
+                    - ERROR_TEAM_NAME_NOT_UNIQUE
+                    - ERROR_SUBJECT_NOT_IN_GROUP
+                    - ERROR_SUBJECT_TYPE_UNSUPPORTED
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Machine readable error indicating what went wrong.
+                    enum:
+                    - ERROR_GROUP_DOES_NOT_EXIST
+                    - ERROR_SUBJECT_DOES_NOT_EXIST
+                    - ERROR_ROLE_DOES_NOT_EXIST
+                  detail:
+                    oneOf:
+                    - type: string
+                      format: string
+                      description: Human readable details about what went wrong.
+                    - type: object
+                      format: object
+                      description: Machine readable object about what went wrong.
+          description: ''
+components:
+  securitySchemes:
+    UserSource JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+  schemas:
+    TeamSubject:
+      type: object
+      description: 'Mixin to a DRF serializer class to raise an exception if data with unknown fields
+
+        is provided to the serializer.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        subject_id:
+          type: integer
+          description: The subject's unique identifier.
+        subject_user_email:
+          type: string
+          format: email
+          description: The user subject's email address.
+        subject_type:
+          allOf:
+          - $ref: '#/components/schemas/SubjectType0b2Enum'
+          description: 'The type of subject that is being invited.
+
+
+            * `auth.User` - auth.User'
+      required:
+      - id
+      - subject_type
+    TeamResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: A human friendly name for this team.
+          maxLength: 160
+        workspace:
+          type: integer
+          description: The workspace that this team belongs to.
+        created_on:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_on:
+          type: string
+          format: date-time
+          readOnly: true
+        default_role:
+          type: string
+          description: The uid of the role this team has in its workspace.
+        subject_count:
+          type: integer
+          description: The amount of subjects (e.g. users) that are currently assigned to this team.
+        subject_sample:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamSampleSubject'
+          description: A sample, by default 10, of the most recent subjects to join this team.
+      required:
+      - created_on
+      - id
+      - name
+      - subject_count
+      - updated_on
+      - workspace
+    TeamSubjectResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        subject_id:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: The unique subject ID.
+        subject_type:
+          type: string
+          description: 'Returns the TeamSubject''s `subject_type` natural key.
+
+
+            :param obj: The TeamSubject record.
+
+            :return: The subject''s content type natural key.'
+          readOnly: true
+        team:
+          type: integer
+          description: The team this subject belongs to.
+      required:
+      - id
+      - subject_id
+      - subject_type
+      - team
+    Team:
+      type: object
+      description: 'Mixin to a DRF serializer class to raise an exception if data with unknown fields
+
+        is provided to the serializer.'
+      properties:
+        name:
+          type: string
+          description: A human friendly name for this team.
+          maxLength: 160
+        default_role:
+          type: string
+          nullable: true
+          description: The uid of the role you want to assign to the team in the given workspace. You
+            can omit this property if you want to remove the role.
+        subjects:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamSubject'
+          default: []
+          description: An array of subject ID/type objects to be used during team create and update.
+      required:
+      - name
+    SubjectType0b2Enum:
+      enum:
+      - auth.User
+      type: string
+      description: '* `auth.User` - auth.User'
+    TeamSampleSubject:
+      type: object
+      properties:
+        subject_id:
+          type: integer
+          description: The subject's unique identifier.
+        subject_type:
+          allOf:
+          - $ref: '#/components/schemas/SubjectType0b2Enum'
+          description: 'The type of subject who belongs to the team.
+
+
+            * `auth.User` - auth.User'
+        subject_label:
+          type: string
+          description: The subject's label. Defaults to a user's first name.
+        team_subject_id:
+          type: integer
+          description: The team subject unique identifier.
+      required:
+      - subject_id
+      - subject_label
+      - subject_type
+      - team_subject_id
+tags: []

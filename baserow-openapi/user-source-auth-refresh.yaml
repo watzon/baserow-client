@@ -1,0 +1,50 @@
+openapi: 3.0.3
+info:
+  title: Baserow API spec
+  version: 1.32.5
+  description: 'For more information about our REST API, please visit [this page](https://baserow.io/docs/apis%2Frest-api).
+
+
+    For more information about our deprecation policy, please visit [this page](https://baserow.io/docs/apis%2Fdeprecations).'
+  contact:
+    url: https://baserow.io/contact
+  license:
+    name: MIT
+    url: https://gitlab.com/baserow/baserow/-/blob/master/LICENSE
+paths:
+  /api/user-source-auth-refresh/:
+    post:
+      operationId: user_source_token_refresh
+      description: Generate a new access_token that can be used to continue operating on Baserow with
+        a user source user starting from a valid refresh token.
+      tags:
+      - User sources
+      security:
+      - JWT: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: '''access_token'' can be used to authorize for other endpoints that require
+                      authorization. This token will be valid for 10 minutes.'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                description: The JWT refresh token is invalid or expired.
+          description: ''
+components:
+  securitySchemes:
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT your_token
+tags:
+- name: User sources
