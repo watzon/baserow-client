@@ -16,32 +16,32 @@ A comprehensive TypeScript client library for the [Baserow](https://baserow.io) 
 
 ```bash
 # Using npm
-npm install baserow
+npm install @watzon/baserow
 
 # Using yarn
-yarn add baserow
+yarn add @watzon/baserow
 
 # Using pnpm
-pnpm add baserow
+pnpm add @watzon/baserow
 ```
 
 ### Bun
 
 ```bash
-bun install baserow
+bun install @watzon/baserow
 ```
 
 ### Deno
 
 ```typescript
 // Import from npm registry in your script
-import { BaserowClient } from "npm:baserow";
+import { BaserowClient } from "npm:@watzon/baserow";
 ```
 
 ## Quick Start
 
 ```typescript
-import { BaserowClient } from "baserow";
+import { BaserowClient } from "@watzon/baserow";
 
 // Initialize the client
 const client = new BaserowClient({

@@ -20,6 +20,7 @@
     "type": "git",
     "url": "https://github.com/watzon/baserow-client.git"
   },
+  "homepage": "https://watzon.github.io/baserow-client/",
   "keywords": [
     "baserow",
     "api",
