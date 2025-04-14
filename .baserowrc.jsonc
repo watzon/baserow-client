@@ -1,6 +1,0 @@
-{
-  "name": "baserow",
-  "url": "https://baserow.spectrumitconsulting.com",
-  "database": "105",
-  "output": "./types/baserow.ts"
-}
