@@ -27,30 +27,3 @@ export interface FullHealthCheck {
   celery_queue_size: number;
   celery_export_queue_size: number;
 }
-
-/**
- * @deprecated - These interfaces are no longer used and don't match the API spec
- */
-export interface OldFullHealthCheck {
-  error?: string;
-  databases: DatabasesHealthResponse;
-  email?: EmailHealthResponse;
-}
-
-/**
- * @deprecated - This interface is no longer used and doesn't match the API spec
- * Represents the health status of the database connection.
- */
-export interface DatabasesHealthResponse {
-  connected: boolean;
-  error?: string;
-}
-
-/**
- * @deprecated - This interface is no longer used and doesn't match the API spec
- * Represents the health status of the email configuration.
- */
-export interface EmailHealthResponse {
-  works: boolean;
-  error?: string;
-} 
