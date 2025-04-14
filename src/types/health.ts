@@ -39,16 +39,18 @@ export interface OldFullHealthCheck {
 
 /**
  * @deprecated - This interface is no longer used and doesn't match the API spec
+ * Represents the health status of the database connection.
  */
-interface DatabasesHealthResponse {
+export interface DatabasesHealthResponse {
   connected: boolean;
   error?: string;
 }
 
 /**
  * @deprecated - This interface is no longer used and doesn't match the API spec
+ * Represents the health status of the email configuration.
  */
-interface EmailHealthResponse {
+export interface EmailHealthResponse {
   works: boolean;
   error?: string;
 } 

@@ -20,6 +20,20 @@ import type {
 } from "../types/database"; // Adjust path as needed
 import type { BaserowClient } from "./baserow-client";
 
+/**
+ * Converts camelCase parameters to snake_case for API compatibility
+ */
+function convertToSnakeCase(params: Record<string, any>): Record<string, any> {
+  if (!params) return params;
+  
+  const converted: Record<string, any> = {};
+  for (const [key, value] of Object.entries(params)) {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    converted[snakeKey] = value;
+  }
+  return converted;
+}
+
 export class DatabaseTableOperations {
   constructor(private client: BaserowClient) {}
 
@@ -63,7 +77,7 @@ export class DatabaseTableOperations {
       "POST",
       `/api/database/tables/database/${databaseId}/`,
       undefined,
-      payload,
+      convertToSnakeCase(payload),
       finalHeaders
     );
   }
@@ -91,7 +105,7 @@ export class DatabaseTableOperations {
       "POST",
       `/api/database/tables/database/${databaseId}/async/`,
       undefined,
-      payload,
+      convertToSnakeCase(payload),
       finalHeaders
     );
   }
@@ -136,7 +150,7 @@ export class DatabaseTableOperations {
       "PATCH",
       `/api/database/tables/${tableId}/`,
       undefined,
-      payload,
+      convertToSnakeCase(payload),
       finalHeaders
     );
   }
@@ -219,11 +233,15 @@ export class DatabaseTableOperations {
         options.clientUndoRedoActionGroupId;
     const finalHeaders = Object.keys(headers).length > 0 ? headers : undefined;
 
+    const snakeCasePayload = {
+      table_ids: payload.tableIds
+    };
+
     await this.client._request<void>(
       "POST",
       `/api/database/tables/database/${databaseId}/order/`,
       undefined,
-      payload,
+      snakeCasePayload,
       finalHeaders
     );
   }
@@ -245,7 +263,7 @@ export class DatabaseTableOperations {
       "POST",
       `/api/database/tables/${tableId}/import/async/`,
       undefined,
-      payload
+      convertToSnakeCase(payload)
     );
   }
 
@@ -282,7 +300,7 @@ export class DatabaseTableOperations {
       "PATCH",
       `/api/database/data-sync/${dataSyncId}/`,
       undefined,
-      payload
+      convertToSnakeCase(payload)
     );
   }
 
@@ -355,7 +373,7 @@ export class DatabaseTableOperations {
       "POST",
       `/api/database/data-sync/database/${databaseId}/`,
       undefined,
-      payload,
+      convertToSnakeCase(payload),
       finalHeaders
     );
   }
@@ -375,7 +393,7 @@ export class DatabaseTableOperations {
       "POST",
       `/api/database/data-sync/properties/`,
       undefined,
-      payload
+      convertToSnakeCase(payload)
     );
   }
 
@@ -412,7 +430,7 @@ export class DatabaseTableOperations {
       "POST",
       `/api/database/export/table/${tableId}/`,
       undefined,
-      payload
+      convertToSnakeCase(payload)
     );
   }
 }

@@ -12,6 +12,20 @@ import type {
 } from "../types/database";
 
 /**
+ * Converts camelCase parameters to snake_case for API compatibility
+ */
+function convertToSnakeCase(params: Record<string, any>): Record<string, any> {
+  if (!params) return params;
+  
+  const converted: Record<string, any> = {};
+  for (const [key, value] of Object.entries(params)) {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    converted[snakeKey] = value;
+  }
+  return converted;
+}
+
+/**
  * Operations for managing Baserow database fields.
  */
 export class DatabaseFieldOperations {
@@ -71,7 +85,7 @@ export class DatabaseFieldOperations {
       "POST",
       `/api/database/fields/table/${tableId}/`,
       undefined,
-      payload,
+      convertToSnakeCase(payload),
       finalHeaders
     );
   }
@@ -102,7 +116,7 @@ export class DatabaseFieldOperations {
       "PATCH",
       `/api/database/fields/${fieldId}/`,
       undefined,
-      payload,
+      convertToSnakeCase(payload),
       finalHeaders
     );
   }
@@ -151,7 +165,7 @@ export class DatabaseFieldOperations {
     return this.client._request<UniqueRowValues>(
       "GET",
       `/api/database/fields/${fieldId}/unique_row_values/`,
-      params as Record<string, string | number | boolean | string[] | null | undefined>
+      params ? convertToSnakeCase(params) : undefined
     );
   }
 
@@ -175,11 +189,13 @@ export class DatabaseFieldOperations {
         params.clientUndoRedoActionGroupId;
     const finalHeaders = Object.keys(headers).length > 0 ? headers : undefined;
 
+    const payload = params ? { duplicate_data: params.duplicateData || false } : { duplicate_data: false };
+
     return this.client._request<DuplicateFieldJobResponse>(
       "POST",
       `/api/database/fields/${fieldId}/duplicate/async/`,
       undefined,
-      { duplicate_data: params?.duplicate_data || false },
+      payload,
       finalHeaders
     );
   }
@@ -211,7 +227,7 @@ export class DatabaseFieldOperations {
       "POST",
       `/api/database/fields/${fieldId}/generate-ai-field-values/`,
       undefined,
-      payload,
+      convertToSnakeCase(payload),
       finalHeaders
     );
   }

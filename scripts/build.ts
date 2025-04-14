@@ -5,17 +5,24 @@ async function build() {
   // Ensure dist directory exists
   await mkdir("dist", { recursive: true });
 
-  // Build ESM version
-  const esmBuild = await Bun.build({
+  const commonConfig = {
+    sourcemap: 'linked' as const,
+    minify: true,
     entrypoints: ["./src/index.ts"],
     outdir: "./dist",
+  };
+
+  // Build ESM version
+  const esmBuild = await Bun.build({
+    ...commonConfig,
     naming: {
-      entry: "baserow.esm.js"
+      entry: "baserow.mjs",
     },
-    sourcemap: 'external',
-    minify: false,
-    external: ["*"],
     format: "esm",
+    target: "browser",
+    define: {
+      'process.env.NODE_ENV': '"production"'
+    }
   });
 
   if (!esmBuild.success) {
@@ -25,15 +32,15 @@ async function build() {
 
   // Build CJS version
   const cjsBuild = await Bun.build({
-    entrypoints: ["./src/index.ts"],
-    outdir: "./dist",
+    ...commonConfig,
     naming: {
-      entry: "baserow.cjs.js"
+      entry: "baserow.cjs",
     },
-    sourcemap: 'external',
-    minify: false,
-    external: ["*"],
     format: "cjs",
+    target: "node",
+    define: {
+      'process.env.NODE_ENV': '"production"'
+    }
   });
 
   if (!cjsBuild.success) {

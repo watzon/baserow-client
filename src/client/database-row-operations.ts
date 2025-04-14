@@ -25,6 +25,20 @@ import type {
 import type { BaserowClient } from "./baserow-client";
 import { BaserowApiError } from "../types/error";
 
+/**
+ * Converts camelCase parameters to snake_case for API compatibility
+ */
+function convertToSnakeCase(params: Record<string, any>): Record<string, any> {
+  if (!params) return params;
+  
+  const converted: Record<string, any> = {};
+  for (const [key, value] of Object.entries(params)) {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    converted[snakeKey] = value;
+  }
+  return converted;
+}
+
 export class DatabaseRowOperations {
     constructor(private client: BaserowClient) {}
   
@@ -40,9 +54,9 @@ export class DatabaseRowOperations {
       tableId: number,
       params?: ListRowsParams
     ): Promise<ListRowsResponse<T>> {
-      // Handle structured filters separately
       const { filters, ...otherParams } = params || {};
-      const queryParams: Record<string, any> = { ...otherParams };
+      const queryParams: Record<string, any> = convertToSnakeCase({ ...otherParams });
+      
       if (filters) {
         queryParams["filters"] = JSON.stringify(filters);
         // Remove individual filter params if structured filters are provided
@@ -73,12 +87,12 @@ export class DatabaseRowOperations {
     async get<T extends BaserowRow = BaserowRow>(
       tableId: number,
       rowId: number,
-      params?: { include?: "metadata"; user_field_names?: boolean }
+      params?: { include?: "metadata"; userFieldNames?: boolean }
     ): Promise<T> {
       return this.client._request<T>(
         "GET",
         `/api/database/rows/table/${tableId}/${rowId}/`,
-        params
+        params ? convertToSnakeCase(params) : undefined
       );
     }
   
@@ -108,17 +122,15 @@ export class DatabaseRowOperations {
         headers["ClientUndoRedoActionGroupId"] =
           options.clientUndoRedoActionGroupId;
   
-      // Use spread operator for query params if they exist
-      const queryParams = params ? { ...params } : undefined;
-      // Pass undefined for headers if the object is empty
+      const queryParams = params ? convertToSnakeCase(params) : undefined;
       const finalHeaders = Object.keys(headers).length > 0 ? headers : undefined;
   
       return this.client._request<TResponse>(
         "POST",
         `/api/database/rows/table/${tableId}/`,
-        queryParams, // Pass the potentially new object or undefined
+        queryParams,
         rowData,
-        finalHeaders // Pass the potentially empty object or undefined
+        finalHeaders
       );
     }
   
@@ -150,17 +162,15 @@ export class DatabaseRowOperations {
         headers["ClientUndoRedoActionGroupId"] =
           options.clientUndoRedoActionGroupId;
   
-      // Use spread operator for query params if they exist
-      const queryParams = params ? { ...params } : undefined;
-      // Pass undefined for headers if the object is empty
+      const queryParams = params ? convertToSnakeCase(params) : undefined;
       const finalHeaders = Object.keys(headers).length > 0 ? headers : undefined;
   
       return this.client._request<TResponse>(
         "PATCH",
         `/api/database/rows/table/${tableId}/${rowId}/`,
-        queryParams, // Pass the potentially new object or undefined
+        queryParams,
         rowData,
-        finalHeaders // Pass the potentially empty object or undefined
+        finalHeaders
       );
     }
   
@@ -186,17 +196,15 @@ export class DatabaseRowOperations {
         headers["ClientUndoRedoActionGroupId"] =
           options.clientUndoRedoActionGroupId;
   
-      // Use spread operator for query params if they exist
-      const queryParams = params ? { ...params } : undefined;
-      // Pass undefined for headers if the object is empty
+      const queryParams = params ? convertToSnakeCase(params) : undefined;
       const finalHeaders = Object.keys(headers).length > 0 ? headers : undefined;
   
       await this.client._request<void>(
         "DELETE",
         `/api/database/rows/table/${tableId}/${rowId}/`,
-        queryParams, // Pass the potentially new object or undefined
+        queryParams,
         undefined,
-        finalHeaders // Pass the potentially empty object or undefined
+        finalHeaders
       );
     }
   
@@ -223,17 +231,15 @@ export class DatabaseRowOperations {
         headers["ClientUndoRedoActionGroupId"] =
           options.clientUndoRedoActionGroupId;
   
-      // Use spread operator for query params if they exist
-      const queryParams = params ? { ...params } : undefined;
-      // Pass undefined for headers if the object is empty
+      const queryParams = params ? convertToSnakeCase(params) : undefined;
       const finalHeaders = Object.keys(headers).length > 0 ? headers : undefined;
   
       return this.client._request<TResponse>(
         "PATCH",
         `/api/database/rows/table/${tableId}/${rowId}/move/`,
-        queryParams, // Pass the potentially new object or undefined
-        {}, // Body is empty for move operation
-        finalHeaders // Pass the potentially empty object or undefined
+        queryParams,
+        {},
+        finalHeaders
       );
     }
   
@@ -297,17 +303,15 @@ export class DatabaseRowOperations {
         headers["ClientUndoRedoActionGroupId"] =
           options.clientUndoRedoActionGroupId;
   
-      // Use spread operator for query params if they exist
-      const queryParams = params ? { ...params } : undefined;
-      // Pass undefined for headers if the object is empty
+      const queryParams = params ? convertToSnakeCase(params) : undefined;
       const finalHeaders = Object.keys(headers).length > 0 ? headers : undefined;
   
       return this.client._request<{ items: TResponse[] }>(
         "PATCH",
         `/api/database/rows/table/${tableId}/batch/`,
-        queryParams, // Pass the potentially new object or undefined
+        queryParams,
         payload,
-        finalHeaders // Pass the potentially empty object or undefined
+        finalHeaders
       );
     }
   
@@ -333,18 +337,16 @@ export class DatabaseRowOperations {
         headers["ClientUndoRedoActionGroupId"] =
           options.clientUndoRedoActionGroupId;
   
-      // Use spread operator for query params if they exist
-      const queryParams = params ? { ...params } : undefined;
-      // Pass undefined for headers if the object is empty
+      const queryParams = params ? convertToSnakeCase(params) : undefined;
       const finalHeaders = Object.keys(headers).length > 0 ? headers : undefined;
   
       const payload: BatchDeleteRowsPayload = { items: rowIds };
       await this.client._request<void>(
         "POST", // Note: The API uses POST for batch delete
         `/api/database/rows/table/${tableId}/batch-delete/`,
-        queryParams, // Pass the potentially new object or undefined
+        queryParams,
         payload,
-        finalHeaders // Pass the potentially empty object or undefined
+        finalHeaders
       );
     }
   
@@ -362,8 +364,7 @@ export class DatabaseRowOperations {
       rowId: number,
       params?: GetAdjacentRowParams
     ): Promise<TResponse | null> {
-      // Use spread operator for query params if they exist
-      const queryParams = params ? { ...params } : undefined;
+      const queryParams = params ? convertToSnakeCase(params) : undefined;
       try {
         // The API returns 204 No Content if no adjacent row is found
         const response = await this.client._request<TResponse | undefined>(
@@ -397,8 +398,7 @@ export class DatabaseRowOperations {
       rowId: number,
       params?: ListRowHistoryParams
     ): Promise<ListRowHistoryResponse> {
-      // Use spread operator for query params if they exist
-      const queryParams = params ? { ...params } : undefined;
+      const queryParams = params ? convertToSnakeCase(params) : undefined;
       return this.client._request<ListRowHistoryResponse>(
         "GET",
         `/api/database/rows/table/${tableId}/${rowId}/history/`,
@@ -438,7 +438,7 @@ export class DatabaseRowOperations {
       rowId: number,
       params?: ListRowCommentsParams
     ): Promise<ListRowCommentsResponse> {
-      const queryParams = params ? { ...params } : undefined;
+      const queryParams = params ? convertToSnakeCase(params) : undefined;
       return this.client._request<ListRowCommentsResponse>(
         "GET",
         `/api/row_comments/${tableId}/${rowId}/`,

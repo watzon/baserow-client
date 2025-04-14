@@ -27,6 +27,7 @@ import { TemplateOperations } from "./template-operations";
 import { TrashOperations } from "./trash-operations";
 import { UserOperations } from "./user-operations";
 import { SsoOperations } from "./sso-operations";
+import { HeadersInit } from "bun";
 
 /**
  * Main Baserow API Client class.
@@ -140,11 +141,11 @@ export class BaserowClient {
       });
     }
 
-    const headers: HeadersInit = {
+    const headers = new Headers({
       Authorization: `${this.tokenType} ${this.token}`,
       ...this.defaultHeaders,
       ...additionalHeaders,
-    };
+    })
 
     const options: RequestInit = {
       method,

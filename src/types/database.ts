@@ -4,6 +4,7 @@ import type {
   SearchParams,
   FilterGroup,
   FilterType,
+  Filter,
 } from "./common"; // Assuming common types are in this path
 
 // --- General ---
@@ -18,9 +19,9 @@ export type BaserowJobState =
 export interface BaserowJob {
   id: number;
   type: string;
-  progress_percentage: number;
+  progressPercentage: number;
   state: BaserowJobState;
-  human_readable_error?: string;
+  humanReadableError?: string;
 }
 
 // --- Database Table Types ---
@@ -29,7 +30,7 @@ export interface Table {
   name: string;
   order: number;
   database_id: number;
-  data_sync?: DataSync | null;
+  dataSync?: DataSync | null;
 }
 
 // Schema used for listing, might differ slightly if needed
@@ -38,7 +39,7 @@ export type ListTablesResponse = Table[];
 export interface TableCreate {
   name: string;
   data?: any[][]; // Array of arrays representing rows and columns
-  first_row_header?: boolean;
+  firstRowHeader?: boolean;
 }
 
 export interface PatchedTableUpdate {
@@ -46,13 +47,13 @@ export interface PatchedTableUpdate {
 }
 
 export interface OrderTablesPayload {
-  table_ids: number[];
+  tableIds: number[];
 }
 
 // --- Table Import/Export ---
 export interface TableImportConfiguration {
-  upsert_fields?: number[] | null;
-  upsert_values?: any[][] | null;
+  upsertFields?: number[] | null;
+  upsertValues?: any[][] | null;
 }
 
 export interface TableImportPayload {
@@ -61,26 +62,26 @@ export interface TableImportPayload {
 }
 
 export interface FileImportJobResponse extends BaserowJob {
-  database_id: number;
+  databaseId: number;
   name?: string; // Name of new table if creating
-  table_id?: number; // ID of existing table if importing into
-  first_row_header?: boolean;
+  tableId?: number; // ID of existing table if importing into
+  firstRowHeader?: boolean;
   report: {
-    failing_rows: Record<string, Record<string, string[]>>; // row_index -> { field_name -> [errors] }
+    failingRows: Record<string, Record<string, string[]>>; // rowIndex -> { fieldName -> [errors] }
   };
 }
 
 export interface DuplicateTableJobResponse extends BaserowJob {
-  original_table: Table;
-  duplicated_table: Table;
+  originalTable: Table;
+  duplicatedTable: Table;
 }
 
 // Base interface for exporter options
 interface BaseExportOptions {
-  view_id?: number | null;
-  export_charset?: ExportCharset;
+  viewId?: number | null;
+  exportCharset?: ExportCharset;
   filters?: PublicViewFilters | null;
-  order_by?: string | null;
+  orderBy?: string | null;
   fields?: number[] | null;
 }
 
@@ -122,26 +123,26 @@ export type ExportCharset =
 export type ExporterType = "csv" | "json" | "xml" | "excel" | "file";
 
 export interface CsvExporterOptions extends BaseExportOptions {
-  exporter_type: "csv";
-  csv_column_separator?: "," | ";" | "|" | "tab" | "record_separator" | "unit_separator";
-  csv_include_header?: boolean;
+  exporterType: "csv";
+  csvColumnSeparator?: "," | ";" | "|" | "tab" | "recordSeparator" | "unitSeparator";
+  csvIncludeHeader?: boolean;
 }
 
 export interface ExcelExporterOptions extends BaseExportOptions {
-  exporter_type: "excel";
-  excel_include_header?: boolean;
+  exporterType: "excel";
+  excelIncludeHeader?: boolean;
 }
 
 export interface FileExporterOptions extends BaseExportOptions {
-  exporter_type: "file";
-  organize_files?: boolean;
+  exporterType: "file";
+  organizeFiles?: boolean;
 }
 
 export interface JsonExporterOptions extends BaseExportOptions {
-  exporter_type: "json";
+  exporterType: "json";
 }
 export interface XmlExporterOptions extends BaseExportOptions {
-    exporter_type: "xml";
+    exporterType: "xml";
   }
 
 export type ExportOptions =
@@ -155,62 +156,62 @@ export type ExportOptions =
 export interface ExportJob extends BaserowJob {
   table?: number | null;
   view?: number | null;
-  exporter_type: string;
-  exported_file_name?: string | null;
-  created_at: string; // ISO DateTime
+  exporterType: string;
+  exportedFileName?: string | null;
+  createdAt: string; // ISO DateTime
   url: string;
 }
 
 // --- Data Sync ---
 export interface DataSyncSyncedProperty {
-  field_id: number;
+  fieldId: number;
   key: string;
-  unique_primary?: boolean;
+  uniquePrimary?: boolean;
 }
 
 export interface BaseDataSync {
   id: number;
   type: string; // Readonly
-  synced_properties: DataSyncSyncedProperty[];
-  last_sync?: string | null; // ISO DateTime
-  last_error?: string | null;
+  syncedProperties: DataSyncSyncedProperty[];
+  lastSync?: string | null; // ISO DateTime
+  lastError?: string | null;
 }
 
 // Specific DataSync types based on discriminator
 export interface ICalCalendarDataSync extends BaseDataSync {
   type: "ical_calendar";
-  ical_url: string;
+  icalUrl: string;
 }
 export interface PostgreSQLDataSync extends BaseDataSync {
   type: "postgresql";
-  postgresql_host: string;
-  postgresql_username: string;
-  postgresql_port?: number;
-  postgresql_database: string;
-  postgresql_schema?: string;
-  postgresql_table: string;
-  postgresql_sslmode?: string; // Consider enum if specific modes are known/needed
+  postgresqlHost: string;
+  postgresqlUsername: string;
+  postgresqlPort?: number;
+  postgresqlDatabase: string;
+  postgresqlSchema?: string;
+  postgresqlTable: string;
+  postgresqlSslmode?: string; // Consider enum if specific modes are known/needed
 }
 export interface LocalBaserowTableDataSync extends BaseDataSync {
   type: "local_baserow_table";
-  source_table_id: number;
-  source_table_view_id?: number | null;
+  sourceTableId: number;
+  sourceTableViewId?: number | null;
 }
 export interface JiraIssuesDataSync extends BaseDataSync {
   type: "jira_issues";
-  jira_url: string;
-  jira_project_key?: string;
-  jira_username: string;
+  jiraUrl: string;
+  jiraProjectKey?: string;
+  jiraUsername: string;
 }
 export interface GitHubIssuesDataSync extends BaseDataSync {
   type: "github_issues";
-  github_issues_owner: string;
-  github_issues_repo: string;
+  githubIssuesOwner: string;
+  githubIssuesRepo: string;
 }
 export interface GitLabIssuesDataSync extends BaseDataSync {
   type: "gitlab_issues";
-  gitlab_url?: string;
-  gitlab_project_id: string;
+  gitlabUrl?: string;
+  gitlabProjectId: string;
 }
 export interface HubSpotContactsDataSync extends BaseDataSync {
   type: "hubspot_contacts";
@@ -230,44 +231,44 @@ export type DataSync =
 
 // Base interface for DataSync creation
 interface BaseDataSyncCreate {
-    synced_properties: string[];
-    table_name: string;
+    syncedProperties: string[];
+    tableName: string;
   }
 
 export interface ICalCalendarDataSyncCreate extends BaseDataSyncCreate {
     type: "ical_calendar";
-    ical_url: string;
+    icalUrl: string;
 }
 export interface PostgreSQLDataSyncCreate extends BaseDataSyncCreate {
     type: "postgresql";
-    postgresql_host: string;
-    postgresql_username: string;
-    postgresql_port?: number;
-    postgresql_database: string;
-    postgresql_schema?: string;
-    postgresql_table: string;
-    postgresql_sslmode?: string; // Consider enum
+    postgresqlHost: string;
+    postgresqlUsername: string;
+    postgresqlPort?: number;
+    postgresqlDatabase: string;
+    postgresqlSchema?: string;
+    postgresqlTable: string;
+    postgresqlSslmode?: string; // Consider enum
 }
 export interface LocalBaserowTableDataSyncCreate extends BaseDataSyncCreate {
     type: "local_baserow_table";
-    source_table_id: number;
-    source_table_view_id?: number | null;
+    sourceTableId: number;
+    sourceTableViewId?: number | null;
 }
 export interface JiraIssuesDataSyncCreate extends BaseDataSyncCreate {
     type: "jira_issues";
-    jira_url: string;
-    jira_project_key?: string;
-    jira_username: string;
+    jiraUrl: string;
+    jiraProjectKey?: string;
+    jiraUsername: string;
 }
 export interface GitHubIssuesDataSyncCreate extends BaseDataSyncCreate {
     type: "github_issues";
-    github_issues_owner: string;
-    github_issues_repo: string;
+    githubIssuesOwner: string;
+    githubIssuesRepo: string;
 }
 export interface GitLabIssuesDataSyncCreate extends BaseDataSyncCreate {
     type: "gitlab_issues";
-    gitlab_url?: string;
-    gitlab_project_id: string;
+    gitlabUrl?: string;
+    gitlabProjectId: string;
 }
 export interface HubSpotContactsDataSyncCreate extends BaseDataSyncCreate {
     type: "hubspot_contacts";
@@ -284,37 +285,37 @@ export type DataSyncCreatePayload =
 
 // Base interface for DataSync update
 interface BaseDataSyncUpdate {
-    synced_properties?: string[];
+    syncedProperties?: string[];
 }
 
 export interface ICalCalendarDataSyncUpdate extends BaseDataSyncUpdate {
-    ical_url?: string;
+    icalUrl?: string;
 }
 export interface PostgreSQLDataSyncUpdate extends BaseDataSyncUpdate {
-    postgresql_host?: string;
-    postgresql_username?: string;
-    postgresql_port?: number;
-    postgresql_database?: string;
-    postgresql_schema?: string;
-    postgresql_table?: string;
-    postgresql_sslmode?: string; // Consider enum
+    postgresqlHost?: string;
+    postgresqlUsername?: string;
+    postgresqlPort?: number;
+    postgresqlDatabase?: string;
+    postgresqlSchema?: string;
+    postgresqlTable?: string;
+    postgresqlSslmode?: string; // Consider enum
 }
 export interface LocalBaserowTableDataSyncUpdate extends BaseDataSyncUpdate {
-    source_table_id?: number;
-    source_table_view_id?: number | null;
+    sourceTableId?: number;
+    sourceTableViewId?: number | null;
 }
 export interface JiraIssuesDataSyncUpdate extends BaseDataSyncUpdate {
-    jira_url?: string;
-    jira_project_key?: string;
-    jira_username?: string;
+    jiraUrl?: string;
+    jiraProjectKey?: string;
+    jiraUsername?: string;
 }
 export interface GitHubIssuesDataSyncUpdate extends BaseDataSyncUpdate {
-    github_issues_owner?: string;
-    github_issues_repo?: string;
+    githubIssuesOwner?: string;
+    githubIssuesRepo?: string;
 }
 export interface GitLabIssuesDataSyncUpdate extends BaseDataSyncUpdate {
-    gitlab_url?: string;
-    gitlab_project_id?: string;
+    gitlabUrl?: string;
+    gitlabProjectId?: string;
 }
 export interface HubSpotContactsDataSyncUpdate extends BaseDataSyncUpdate {
     // No specific properties
@@ -331,11 +332,11 @@ export type DataSyncUpdatePayload =
 
 
 export interface ListDataSyncProperty {
-  unique_primary: boolean;
+  uniquePrimary: boolean;
   key: string;
   name: string;
-  field_type: string; // Readonly
-  initially_selected: boolean;
+  fieldType: string; // Readonly
+  initiallySelected: boolean;
 }
 
 export type ListDataSyncPropertiesResponse = ListDataSyncProperty[];
@@ -347,38 +348,38 @@ interface BaseListDataSyncPropertiesRequest {
 
 export interface ICalCalendarListDataSyncPropertiesRequest extends BaseListDataSyncPropertiesRequest {
     type: "ical_calendar";
-    ical_url: string;
+    icalUrl: string;
 }
 export interface PostgreSQLListDataSyncPropertiesRequest extends BaseListDataSyncPropertiesRequest {
     type: "postgresql";
-    postgresql_host: string;
-    postgresql_username: string;
-    postgresql_port?: number;
-    postgresql_database: string;
-    postgresql_schema?: string;
-    postgresql_table: string;
-    postgresql_sslmode?: string; // Consider enum
+    postgresqlHost: string;
+    postgresqlUsername: string;
+    postgresqlPort?: number;
+    postgresqlDatabase: string;
+    postgresqlSchema?: string;
+    postgresqlTable: string;
+    postgresqlSslmode?: string; // Consider enum
 }
 export interface LocalBaserowTableListDataSyncPropertiesRequest extends BaseListDataSyncPropertiesRequest {
     type: "local_baserow_table";
-    source_table_id: number;
-    source_table_view_id?: number | null;
+    sourceTableId: number;
+    sourceTableViewId?: number | null;
 }
 export interface JiraIssuesListDataSyncPropertiesRequest extends BaseListDataSyncPropertiesRequest {
     type: "jira_issues";
-    jira_url: string;
-    jira_project_key?: string;
-    jira_username: string;
+    jiraUrl: string;
+    jiraProjectKey?: string;
+    jiraUsername: string;
 }
 export interface GitHubIssuesListDataSyncPropertiesRequest extends BaseListDataSyncPropertiesRequest {
     type: "github_issues";
-    github_issues_owner: string;
-    github_issues_repo: string;
+    githubIssuesOwner: string;
+    githubIssuesRepo: string;
 }
 export interface GitLabIssuesListDataSyncPropertiesRequest extends BaseListDataSyncPropertiesRequest {
     type: "gitlab_issues";
-    gitlab_url?: string;
-    gitlab_project_id: string;
+    gitlabUrl?: string;
+    gitlabProjectId: string;
 }
 export interface HubSpotContactsListDataSyncPropertiesRequest extends BaseListDataSyncPropertiesRequest {
     type: "hubspot_contacts";
@@ -394,7 +395,7 @@ export type ListDataSyncPropertiesRequest =
   | HubSpotContactsListDataSyncPropertiesRequest;
 
 export interface SyncDataSyncTableJobResponse extends BaserowJob {
-  data_sync: DataSync;
+  dataSync: DataSync;
 }
 
 // --- Database Row Types (Copied/Merged from Original) ---
@@ -403,43 +404,30 @@ export interface SyncDataSyncTableJobResponse extends BaserowJob {
 export interface BaserowRow {
   id: number;
   order: string; // Usually a decimal string
-  [key: `field_${number}`]: any; // Standard field keys
-  [key: string]: any; // For user_field_names=true
+  [key: string]: any; // For userFieldNames=true
 }
 
 export interface RowMetadata {
-  row_comment_count?: number;
-  row_comments_notification_mode?: "all" | "mentions";
+  rowCommentCount?: number;
+  rowCommentsNotificationMode?: "all" | "mentions";
 }
 
 export interface BaserowRowWithMetadata extends BaserowRow {
   metadata?: RowMetadata;
 }
 
-export interface ListRowsParams extends PaginationParams, SearchParams {
-  /** Comma-separated list of field IDs/names to include */
-  include?: string;
-  /** Comma-separated list of field IDs/names to exclude */
+export interface ListRowsParams {
+  page?: number;
+  size?: number;
+  search?: string;
+  viewId?: number | null;
+  filters?: Filter[];
+  filterType?: FilterType;
+  [key: `filter__${number}`]: string;
+  orderBy?: string;
+  includeFields?: string;
   exclude?: string;
-  /** Comma-separated list of fields to order by (prepend '-' for descending) */
-  order_by?: string;
-  /** Apply filters and sorts from this view ID */
-  view_id?: number;
-  /** Use user field names instead of field_X keys */
-  user_field_names?: boolean;
-  /** Structured filter object */
-  filters?: FilterGroup | null;
-  /** How filters are combined if using filter__field__type params */
-  filter_type?: FilterType;
-  /** Dynamic filters using filter__field__type=value syntax */
-  [filterKey: `filter__${string | number}__${string}`]:
-    | string
-    | number
-    | boolean
-    | null
-    | undefined;
-  /** Row lookups via link row fields */
-  [lookupKey: string]: any; // More specific typing is complex, use RowLookup for better structure if possible
+  sourceTableViewId?: number | null;
 }
 
 export interface ListRowsResponse<T extends BaserowRow = BaserowRow>
@@ -451,31 +439,23 @@ export interface ListRowsResponse<T extends BaserowRow = BaserowRow>
 }
 
 export interface CreateRowParams {
-  /** If provided, the new row will be positioned before the row with this ID */
   before?: number;
-  /** Whether to trigger webhooks */
-  send_webhook_events?: boolean;
-  /** Use user field names instead of field_X keys */
-  user_field_names?: boolean;
+  sendWebhookEvents?: boolean;
+  userFieldNames?: boolean;
 }
 
 export interface UpdateRowParams {
-  /** Whether to trigger webhooks */
-  send_webhook_events?: boolean;
-  /** Use user field names instead of field_X keys */
-  user_field_names?: boolean;
+  sendWebhookEvents?: boolean;
+  userFieldNames?: boolean;
 }
 
 export interface DeleteRowParams {
-  /** Whether to trigger webhooks */
-  send_webhook_events?: boolean;
+  sendWebhookEvents?: boolean;
 }
 
 export interface MoveRowParams {
-  /** ID of the row to move the current row before. If null/undefined, move to the end. */
-  before_id?: number | null;
-  /** Use user field names instead of field_X keys */
-  user_field_names?: boolean;
+  beforeId?: number | null;
+  userFieldNames?: boolean;
 }
 
 export interface BatchCreateRowsPayload<T = Record<string, any>> {
@@ -490,20 +470,20 @@ export interface BatchDeleteRowsPayload {
   items: number[]; // Array of row IDs
 }
 
-export interface GetAdjacentRowParams extends SearchParams {
-  previous?: boolean;
-  view_id?: number;
-  user_field_names?: boolean;
+export interface GetAdjacentRowParams {
+  viewId?: number;
+  search?: string;
+  userFieldNames?: boolean;
 }
 
 export interface RowHistoryEntry {
   id: number;
-  action_type: string;
+  actionType: string;
   user: { id: number; name: string };
   timestamp: string; // ISO DateTime
   before: Record<string, any>; // Field ID -> Value
   after: Record<string, any>; // Field ID -> Value
-  fields_metadata: Record<string, any>; // Define more strictly if needed
+  fieldsMetadata: Record<string, any>; // Define more strictly if needed
 }
 
 export interface ListRowHistoryParams extends PaginationParams {
@@ -532,13 +512,13 @@ export interface ListRowNamesResponse {
 // Row Comments (Copied/Merged from Original)
 export interface RowComment {
   id: number;
-  user_id: number | null;
-  first_name?: string; // Optional in case user is deleted? Check API behavior
-  table_id: number;
-  row_id: number;
+  userId: number | null;
+  firstName?: string; // Optional in case user is deleted? Check API behavior
+  tableId: number;
+  rowId: number;
   message: any; // Rich text structure, define more strictly if needed
-  created_on: string; // ISO DateTime
-  updated_on: string; // ISO DateTime
+  createdOn: string; // ISO DateTime
+  updatedOn: string; // ISO DateTime
   edited: boolean;
   trashed: boolean;
 }
@@ -570,7 +550,7 @@ export interface UpdateRowCommentNotificationModePayload {
 // --- Other Utility Types (if needed from spec) ---
 
 export interface PublicViewFilters {
-  filter_type: 'AND' | 'OR';
+  filterType: 'AND' | 'OR';
   filters?: PublicViewFilter[];
   // groups?: PublicViewFilterGroup[]; // Add if groups structure is needed for exports/filters
 }
@@ -584,14 +564,14 @@ export interface PublicViewFilter {
 // --- Database Fields Types ---
 export interface BaseField {
   id: number;
-  table_id: number;
+  tableId: number;
   name: string;
   order: number;
   type: string;
   primary: boolean;
-  read_only: boolean;
-  immutable_type: boolean | null;
-  immutable_properties: boolean | null;
+  readOnly: boolean;
+  immutableType: boolean | null;
+  immutableProperties: boolean | null;
   description: string | null;
 }
 
@@ -616,7 +596,7 @@ export interface FieldUpdateRequest {
 }
 
 export interface RelatedFields {
-  related_fields: Field[];
+  relatedFields: Field[];
 }
 
 export interface UniqueRowValues {
@@ -625,20 +605,20 @@ export interface UniqueRowValues {
 
 export interface UniqueRowValuesParams {
   limit?: number;
-  split_comma_separated?: boolean;
+  splitCommaSeparated?: boolean;
 }
 
 export interface DuplicateFieldJobResponse extends BaserowJob {
-  original_field: Field;
-  duplicated_field: Field & RelatedFields;
+  originalField: Field;
+  duplicatedField: Field & RelatedFields;
 }
 
 export interface DuplicateFieldParams {
-  duplicate_data?: boolean;
+  duplicateData?: boolean;
   clientSessionId?: string;
   clientUndoRedoActionGroupId?: string;
 }
 
 export interface GenerateAIFieldValuesRequest {
-  row_ids: number[];
+  rowIds: number[];
 }
